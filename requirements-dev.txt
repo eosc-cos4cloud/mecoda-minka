@@ -2,3 +2,4 @@ requests-mock
 pytest
 pytest-coverage
 flat_table
+folium

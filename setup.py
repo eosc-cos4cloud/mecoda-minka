@@ -11,7 +11,7 @@ with open("README.md", "r") as readme_file:
 
 setup(
     name="mecoda-minka",
-    version="0.1.0",
+    version="0.1.1",
     description="Library to download information collected in Minka API.",
     author="Ana Alvarez",
     author_email="anomalia@disroot.org",
@@ -37,5 +37,5 @@ setup(
         "Topic :: Utilities",
         "Natural Language :: English",
     ],
-    install_requires=["pydantic", "requests", "pandas", "flat-table", ],
+    install_requires=["pydantic", "requests", "pandas", "flat-table", "folium"],
 )
