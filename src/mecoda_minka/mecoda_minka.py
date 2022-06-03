@@ -58,10 +58,13 @@ def _build_url(
     id_obs: Optional[int] = None,
     user: Optional[str] = None,
     taxon: Optional[str] = None,
+    taxon_id: Optional[int] = None,
     place_id: Optional[int] = None,
     year: Optional[int] = None,
     ) -> str:
     
+    #import pdb; pdb.set_trace()
+
     if project_name is not None:
         id_project = get_project(project_name)[0].id
     
@@ -89,6 +92,8 @@ def _build_url(
         args.append(f"place_id={place_id}")
     if year is not None:
         args.append(f"year={year}")
+    if taxon_id is not None:
+        args.append(f"taxon_id={taxon_id}")
 
     url = f'{base_url}?{"&".join(args)}&per_page=200'
     
@@ -176,8 +181,8 @@ def _request(arg_url: str, num_max: Optional[int] = None) -> List[Observation]:
             while len(page.json()) == 200:
                 observations.extend(_build_observations(page.json()))
                 n += 1
-                if n > 99:
-                    print("WARNING: Only the first 20,000 results are displayed")
+                if n > 49:
+                    print("WARNING: Only the first 10,000 results are displayed")
                     break
                 if num_max is not None and len(observations) >= num_max:
                     break
@@ -201,6 +206,7 @@ def get_obs(
     id_obs: Optional[int] = None,
     user: Optional[str] = None,
     taxon: Optional[str] = None,
+    taxon_id: Optional[int] = None,
     place_id: Optional[int] = None,
     place_name: Optional[str] = None,
     year: Optional[int] = None,
@@ -238,6 +244,7 @@ def get_obs(
             id_obs,
             user,
             taxon,
+            taxon_id,
             place_id,
             year,
             )
