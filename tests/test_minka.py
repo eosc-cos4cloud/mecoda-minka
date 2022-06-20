@@ -15,7 +15,7 @@ from mecoda_minka import (
     TAXONS,
     ICONIC_TAXON
 )
-import requests
+
 
 API_URL = "https://minka-sdg.org"
 
@@ -219,7 +219,7 @@ def test_get_obs_returns_observations_data_when_more_than_pagination(
     assert len(result) == 250
 
 
-def test_get_obs_returns_error_when_more_than_20000_results(
+def test_get_obs_returns_error_when_more_than_10000_results(
     requests_mock,
     capsys,
     ) -> None:
@@ -241,7 +241,7 @@ def test_get_obs_returns_error_when_more_than_20000_results(
         )
     requests_mock.get(
         f'{API_URL}/observations.json?q="quercus quercus"&per_page=200&page=101',
-        json={"message": "You reach 20,000 items limit"},
+        json={"message": "You reach 10,000 items limit"},
     )
 
     result = get_obs("quercus quercus")
@@ -249,8 +249,8 @@ def test_get_obs_returns_error_when_more_than_20000_results(
     # captura el mensaje de error que aparece en el output
     out, err = capsys.readouterr()
     
-    assert len(result) == 20000
-    assert "WARNING: Only the first 20,000 results are displayed" in out
+    assert len(result) == 10000
+    assert "WARNING: Only the first 10,000 results are displayed" in out
     
     
 def test_get_obs_from_user_returns_observations_data(requests_mock,) -> None:

@@ -213,7 +213,7 @@ def get_obs(
     year: Optional[int] = None,
     num_max: Optional[int] = None,
     ) -> List[Observation]:
-
+    #import pdb; pdb. set_trace()
     print("Generando lista de observaciones:")
 
     # procesamos el string del nombre del proyecto
@@ -233,6 +233,7 @@ def get_obs(
                 id_obs,
                 user,
                 taxon,
+                taxon_id,
                 place_id,
                 year,
                 )
@@ -249,7 +250,7 @@ def get_obs(
             place_id,
             year,
             )
-
+        
         observations = _request(url, num_max)
 
     return observations
