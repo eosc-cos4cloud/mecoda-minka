@@ -318,10 +318,10 @@ def get_taxon_columns(df_obs: pd.DataFrame) -> pd.DataFrame:
     
     # set copy to avoid warning
     df = df_obs.copy()
-    df.taxon_ancestry = df_obs.taxon_ancestry.str.split("/")
+    df['taxon_ancestry_list'] = df.taxon_ancestry.str.split("/")
     df_obs = df
 
-    df_obs['ancestry_names'] = df_obs.taxon_ancestry.apply(lambda x: _get_name_from_id(x))
+    df_obs['ancestry_names'] = df_obs.taxon_ancestry_list.apply(lambda x: _get_name_from_id(x))
     
     # set copy to avoid warning
     df = df_obs.copy()
@@ -329,7 +329,7 @@ def get_taxon_columns(df_obs: pd.DataFrame) -> pd.DataFrame:
         df[level] = df_obs['ancestry_names'].apply(lambda x: _get_level(x, level))
     df_obs = df
     
-    df_obs = df_obs.drop(columns=['ancestry_names'])
+    df_obs = df_obs.drop(columns=['ancestry_names', 'taxon_ancestry_list'])
     
     df_obs = pd.concat([df_obs, df_life], ignore_index = True, axis = 0)
     
