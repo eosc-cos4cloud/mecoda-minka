@@ -21,7 +21,7 @@ setup(
     url="https://github.com/pynomaly/mecoda-minka",
     packages=find_packages("src"),
     package_dir={"": "src"},
-    package_data={"mecoda_minka": ["py.typed"]},
+    package_data={"mecoda_minka": ["py.typed", "data/*.csv"]},
     py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
     python_requires=">=3.6",
     classifiers=[

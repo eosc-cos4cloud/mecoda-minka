@@ -10,12 +10,15 @@ import os
 import shutil
 import re
 import numpy as np
+import pkg_resources
 
 urllib3.disable_warnings()
 
 # Definición de variables
 API_URL = "https://minka-sdg.org"
-df_taxon = pd.read_csv("data/taxon_tree.csv")
+
+file_path = pkg_resources.resource_filename("mecoda_minka", "data/taxon_tree.csv")
+df_taxon = pd.read_csv(file_path)
 
 # Función para extraer los datos de un proyecto a partir de su nombre o id
 def get_project(p: Union[str, int]) -> List[Project]:
