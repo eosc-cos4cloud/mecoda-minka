@@ -8,12 +8,14 @@ from mecoda_minka import (
     get_obs,
     get_count_by_taxon,
     get_dfs,
+    get_taxon_columns,
     Project,
     Observation,
     Photo,
     TAXONS,
     ICONIC_TAXON
 )
+import requests
 
 API_URL = "https://minka-sdg.org"
 
@@ -576,7 +578,7 @@ def test_get_obs_with_num_max(requests_mock,) -> None:
     assert result == expected_result
     assert len(result) == 10
 
-def test_get_dfs_extrae_dfs(requests_mock,) -> None:
+def test_get_dfs_extrae_dfs() -> None:
     observations = [
         Observation(
             id=1,
@@ -602,6 +604,7 @@ def test_get_dfs_extrae_dfs(requests_mock,) -> None:
         "observed_on": None,
         'description': None, 
         "iconic_taxon": "animalia",
+        "ancestry": "1/2/4/3/343/1409/35511",
         'taxon_id': None, 
         "taxon_name": "Thalassoma pavo",
         'taxon_ancestry': None, 
@@ -614,21 +617,64 @@ def test_get_dfs_extrae_dfs(requests_mock,) -> None:
         'user_login': "joselu_00",
         'num_identification_agreements': None, 
         'num_identification_disagreements': None,
-
          }])
-    """     
-    expected_result_photo = pd.DataFrame({
-             'id',
-             'photos.id', 'iconic_taxon', 'taxon_name', 'photos.medium_url', 'user_login', 'latitude', 'longitude'}) 
-    """
+    
     result_obs, result_photo = get_dfs(observations)
     assert type(result_obs) == pd.DataFrame    
     assert(len(result_obs)) == len(observations)
     assert result_obs['id'].values != None  
     
-    # check None pandas: https://stackoverflow.com/questions/45271309/check-for-none-in-pandas-dataframe
-    # assert result_obs[['captive', 'place_id', 'quality_grade']].isnull()
-    # assert result_obs[['captive', 'place_id', 'quality_grade']].values == None
-    
-    #assert result_photo == expected_result_photo
-
+def test_get_taxon_columns() -> None:
+    df_obs = pd.DataFrame([{
+        "id":1, 
+        'captive': None,
+        "created_at": None,
+        "updated_at": None,
+        "observed_on": None,
+        'description': None, 
+        "iconic_taxon": "animalia",
+        'taxon_ancestry': "1/2/4/3/343/1409/35511", 
+        'taxon_id': None, 
+        "taxon_name": "Thalassoma pavo",
+        "latitude": 40.1,
+        "longitude":-7.5,
+        'place_name': None, 
+        'place_id': None,
+        'quality_grade': None, 
+        'user_id': None, 
+        'user_login': "joselu_00",
+        'num_identification_agreements': None, 
+        'num_identification_disagreements': None,
+         }])
+    expected_result_obs = pd.DataFrame([{
+        "id":1, 
+        'captive': None,
+        "created_at": None,
+        "updated_at": None,
+        "observed_on": None,
+        'description': None, 
+        "iconic_taxon": "animalia",
+        'taxon_id': None, 
+        "taxon_name": "Thalassoma pavo",
+        'taxon_ancestry': "1/2/4/3/343/1409/35511", 
+        "latitude": 40.1,
+        "longitude":-7.5,
+        'place_name': None, 
+        'place_id': None,
+        'quality_grade': None, 
+        'user_id': None, 
+        'user_login': "joselu_00",
+        'num_identification_agreements': None, 
+        'num_identification_disagreements': None,
+        "kingdom": "Animalia",
+        "phylum": "Chordata",
+        "class": "Actinopterygii",
+        "order": "Perciformes",
+        "superfamily": None,
+        "family": "Labridae",
+        "genus": "Thalassoma"
+         }])
+    df_result = get_taxon_columns(df_obs)
+    assert type(df_result) == pd.DataFrame
+    assert df_result['genus'].item() == "Thalassoma"
+    assert len(df_result.columns) > len(df_obs.columns)

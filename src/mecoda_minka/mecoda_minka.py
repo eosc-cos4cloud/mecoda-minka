@@ -15,6 +15,7 @@ urllib3.disable_warnings()
 
 # Definición de variables
 API_URL = "https://minka-sdg.org"
+df_taxon = pd.read_csv("data/taxon_tree.csv")
 
 # Función para extraer los datos de un proyecto a partir de su nombre o id
 def get_project(p: Union[str, int]) -> List[Project]:
@@ -282,6 +283,56 @@ def get_dfs(observations) -> pd.DataFrame:
     
     return df_observations, df_photos
 
+# Función para crear columnas de los distintos rangos taxonómicos
+def _get_name_from_id(number_list):
+    name_list = []
+    for number in number_list:
+        if number != 1:
+            try:
+                rank = df_taxon[df_taxon['id'] == int(number)]['rank'].item()
+                name = df_taxon[df_taxon['id'] == int(number)]['name'].item()
+                name_list.append(f"{rank} {name}")
+            except:
+                try:
+                    rank = requests.get(f"https://minka-sdg.org/taxa/{number}.json").json()['rank']
+                    name = requests.get(f"https://minka-sdg.org/taxa/{number}.json").json()['name']
+                    name_list.append(f"{rank} {name}")
+                except:
+                    continue
+    return name_list 
+
+def _get_level(x, level):
+    result = None
+    for elem in x:
+        if elem.startswith(level):
+            result = elem.replace(f"{level} ", "")
+    return result
+
+def get_taxon_columns(df_obs: pd.DataFrame) -> pd.DataFrame:
+    df_life = df_obs[df_obs['taxon_ancestry'].isnull()]
+    df_obs = df_obs[df_obs['taxon_ancestry'].notnull()]
+    
+    # set copy to avoid warning
+    df = df_obs.copy()
+    df.taxon_ancestry = df_obs.taxon_ancestry.str.split("/")
+    df_obs = df
+
+    df_obs['ancestry_names'] = df_obs.taxon_ancestry.apply(lambda x: _get_name_from_id(x))
+    
+    # set copy to avoid warning
+    df = df_obs.copy()
+    for level in ['kingdom', 'phylum', 'class', 'order', 'superfamily', 'family', 'genus']:
+        df[level] = df_obs['ancestry_names'].apply(lambda x: _get_level(x, level))
+    df_obs = df
+    
+    df_obs = df_obs.drop(columns=['ancestry_names'])
+    
+    df_obs = pd.concat([df_obs, df_life], ignore_index = True, axis = 0)
+    
+    return df_obs
+
+
+# Función para obtener información extra de cada observación de una selección (muy costoso a nivel de API)
 def extra_info(df_observations) -> pd.DataFrame:
     ids = df_observations['id'].to_list()
     dic = {}
