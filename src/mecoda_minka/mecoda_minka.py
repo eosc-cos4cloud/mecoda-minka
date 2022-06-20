@@ -16,7 +16,7 @@ urllib3.disable_warnings()
 
 # Definición de variables
 API_URL = "https://minka-sdg.org"
-import pdb; pdb.set_trace()
+
 file_path = pkg_resources.resource_filename("mecoda_minka", "data/taxon_tree.csv")
 df_taxon = pd.read_csv(file_path)
 
