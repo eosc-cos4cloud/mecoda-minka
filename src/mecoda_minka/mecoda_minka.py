@@ -26,7 +26,7 @@ def get_project(p: Union[str, int]) -> List[Project]:
 
     if type(p) is int:
         url = f"{API_URL}/projects/{p}.json"
-        page = requests.get(url, verify=False)
+        page = requests.get(url)
         
         if page.status_code == 404:
             print("ID No encontrado")
@@ -37,7 +37,7 @@ def get_project(p: Union[str, int]) -> List[Project]:
 
     elif type(p) is str:
         url = f"{API_URL}/projects/search.json?q={p}"
-        page = requests.get(url, verify=False)
+        page = requests.get(url)
         resultado = [Project(**proj) for proj in page.json()]
         return resultado
 
@@ -45,7 +45,7 @@ def get_project(p: Union[str, int]) -> List[Project]:
 def _get_ids_from_place(place:str) -> list:
     place_ids = []
     url = f"{API_URL}/places.json?q={place}"
-    page = requests.get(url, verify=False)
+    page = requests.get(url)
 
     for dct in page.json():
         place_id = dct['id']
@@ -172,7 +172,7 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
 def _request(arg_url: str, num_max: Optional[int] = None) -> List[Observation]:
     observations = []
     n = 1
-    page = requests.get(arg_url, verify=False)
+    page = requests.get(arg_url)
 
     if page.status_code == 404:
         raise ValueError("Not found")
@@ -191,7 +191,7 @@ def _request(arg_url: str, num_max: Optional[int] = None) -> List[Observation]:
                 if num_max is not None and len(observations) >= num_max:
                     break
                 url = f"{arg_url}&page={n}"
-                page = requests.get(url, verify=False)
+                page = requests.get(url)
                 print(f"Número de elementos: {len(observations)}")
                 
             observations.extend(_build_observations(page.json()))
@@ -261,7 +261,7 @@ def get_obs(
 # Función que devuelve el número de observaciones registrado de cada familia taxonómica
 def get_count_by_taxon() -> Dict:
     url = f"{API_URL}/taxa.json"
-    page = requests.get(url, verify=False)
+    page = requests.get(url)
     taxa = page.json()
     count = {}
     for taxon in taxa:
@@ -343,7 +343,7 @@ def extra_info(df_observations) -> pd.DataFrame:
 
     for id_num in ids:
         url = f"{API_URL}/observations/{id_num}.json"
-        page = requests.get(url, verify=False)
+        page = requests.get(url)
 
         idents = page.json()['identifications']
         if len(idents) > 0:
@@ -375,7 +375,7 @@ def download_photos(df_photos: pd.DataFrame, directorio: Optional[str] = "minka_
     # Itera por el df_photos resultado de la consulta y descarga las fotos en tamaño medio
     for n in range(len(df_photos)):
         row = df_photos.iloc[[n]]
-        response = requests.get(row['photos.medium_url'][n], verify=False, stream=True)
+        response = requests.get(row['photos.medium_url'][n], stream=True)
         if response.status_code == 200:
             with open(f"{directorio}/{row['path'][n]}", 'wb') as out_file:
                 shutil.copyfileobj(response.raw, out_file)
