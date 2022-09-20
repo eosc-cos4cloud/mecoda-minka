@@ -1,5 +1,5 @@
 from .models import Observation, Project, Photo, ICONIC_TAXON, TAXONS
-from .mecoda_minka import get_obs, get_project, get_count_by_taxon, get_dfs, get_taxon_columns
+from .mecoda_minka import get_obs, get_project, get_count_by_taxon, get_dfs, get_taxon_columns, download_photos
 from .views import create_heatmap, create_markercluster
 
 __all__ = [
@@ -14,5 +14,6 @@ __all__ = [
     "get_count_by_taxon",  
     "create_heatmap", 
     "create_markercluster",
-    "get_taxon_columns"
+    "get_taxon_columns",
+    "download_photos"
     ]
