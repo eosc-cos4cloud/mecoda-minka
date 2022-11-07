@@ -7,3 +7,4 @@ old_code
 build/
 dist/
 *egg-info*
+tests/__init__.pyc
