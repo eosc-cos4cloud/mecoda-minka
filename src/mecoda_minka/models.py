@@ -52,11 +52,6 @@ class Project(BaseModel):
     icon_url: Optional[str] = None
     observed_taxa_count: Optional[int] = None
 
-#class Taxon(BaseModel):
-#    id: Optional[int] = None
-#    name: Optional[str] = None
-#    ancestry: Optional[str] = None
-
 class Photo(BaseModel):
     id: Optional[int] = None
     large_url: Optional[str] = None
@@ -77,7 +72,6 @@ class Observation(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     place_name: Optional[str] = None
-    place_id: Optional[int] = None
     quality_grade: Optional[str] = None 
     user_id: Optional[int] = None
     user_login: Optional[str] = None
@@ -86,11 +80,3 @@ class Observation(BaseModel):
     num_identification_disagreements: Optional[int] = None
     identifications_count: Optional[int] = None
     id_please: Optional[bool] = None
-
-
-
-
-
-
-
-
