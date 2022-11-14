@@ -401,8 +401,6 @@ def get_count_by_taxon() -> Dict:
 
 
 # Darwin Core Format
-
-
 def get_dwc(observations: List) -> pd.DataFrame:
     """
     Function to get dataframe with DarwinCore Format.

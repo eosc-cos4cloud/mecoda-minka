@@ -1,6 +1,11 @@
-![](docs/logo-cos4cloud-middle.png)
+<img src="docs/logo-cos4cloud-middle.png" alt="cos4cloud" width="400"/>
 
 Library to extract information collected in the Minka API. This library is part of MECODA (ModulE for Citizen Observatory Data Analysis), aimed to facilitate analysis and viewing of citizen science data.
+
+
+<img src="docs/embimos-positivo.png" alt="embimos" width="150"/>
+
+This repository is part of the work made by the EMBIMOS Reseach Group, at [Marine Sciences Institute](https://www.icm.csic.es/es/grupo-investigacion/environmental-and-sustainability-participatory-information-systems) (CSIC) of Barcelona.
 
 
 # Instalation
