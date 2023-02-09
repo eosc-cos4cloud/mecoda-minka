@@ -8,7 +8,7 @@ Library to extract information collected in the Minka API. This library is part 
 This repository is part of the work made by the EMBIMOS Reseach Group, at [Marine Sciences Institute](https://www.icm.csic.es/es/grupo-investigacion/environmental-and-sustainability-participatory-information-systems) (CSIC) of Barcelona.
 
 
-# Instalation
+# Installation
 
 ```bash
 pip install mecoda-minka
