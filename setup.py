@@ -11,7 +11,7 @@ with open("README.md", "r") as readme_file:
 
 setup(
     name="mecoda-minka",
-    version="1.0.0",
+    version="1.0.1",
     description="Library to download information collected in Minka API.",
     author="Ana Alvarez",
     author_email="anomalia@disroot.org",
