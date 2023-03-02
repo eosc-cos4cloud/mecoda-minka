@@ -374,17 +374,15 @@ def download_photos(
     os.makedirs(directorio)
 
     # Iterate through the df_photos query result and download the photos in medium size
-    for n in range(len(df_photos)):
-        row = df_photos.iloc[[n]]
-        response = requests.get(row["photos.medium_url"][n], stream=True)
+    for i, row in df_photos.iterrows():
+        response = requests.get(row["photos.medium_url"], stream=True)
         if response.status_code == 200:
-            with open(f"{directorio}/{row['path'][n]}", "wb") as out_file:
+            with open(f"{directorio}/{row['path']}", "wb") as out_file:
                 shutil.copyfileobj(response.raw, out_file)
         del response
 
-    df_photos["path"] = df_photos["path"].apply(
-        lambda x: os.path.abspath(f"{directorio}/{x}")
-    )
+    # Even using .loc, we get a SettingWithCopyWarning message
+    df_photos.loc[:, "abs_path"] = os.path.abspath(f"{directorio}/{df_photos['path']}")
 
 
 def get_count_by_taxon() -> Dict:
