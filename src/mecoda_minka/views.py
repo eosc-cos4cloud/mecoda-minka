@@ -50,7 +50,7 @@ def create_markercluster(df):
     for i in range(len(df)):
         folium.Marker(
             location=locations[i],
-            popup=f"Id: {df['id_old'].values[i]}\n Especie:{df['species_guess'].values[i]}",
+            popup=f"Id: {df['id'].values[i]}\n Especie:{df['taxon_name'].values[i]}",
             #icon=folium.Icon(color="green", icon="ok-sign"),
             icon=folium.Icon(color="green", icon='bug', prefix='fa'),
         ).add_to(marker_cluster)
