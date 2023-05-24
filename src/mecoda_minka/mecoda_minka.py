@@ -49,6 +49,7 @@ def get_obs(
     num_max: Optional[int] = None,
     starts_on: Optional[str] = None,  # Must be observed on or after this date
     ends_on: Optional[str] = None,  # Must be observed on or before this date
+    created_on: Optional[str] = None # Day YYYY-MM-DD
 ) -> List[Observation]:
     """
     Function to extract the observations and that supports different filters
@@ -67,6 +68,7 @@ def get_obs(
         year,
         starts_on,
         ends_on,
+        created_on,
     )
 
     observations = _request(url, num_max)
@@ -85,6 +87,7 @@ def _build_url(
     year: Optional[int] = None,
     start_on: Optional[date] = None,
     ends_on: Optional[date] = None,
+    created_on: Optional[date] = None, # day YYYY-MM-DD
 ) -> str:
     """
     Internal function to build the url to which the observation request
@@ -102,6 +105,8 @@ def _build_url(
 
     # define the arguments that the API supports
     args = []
+    if created_on is not None:
+        args.append(f"created_on={created_on}")
     if start_on is not None:
         args.append(f"d1={start_on}")
     if ends_on is not None:
@@ -363,7 +368,8 @@ def extra_info(df_observations) -> pd.DataFrame:
 
 
 def download_photos(
-    df_photos: pd.DataFrame, directorio: Optional[str] = "minka_photos"
+    df_photos: pd.DataFrame, 
+    directorio: Optional[str] = "minka_photos"
 ):
     """
     Function to download the photos resulting from the query.
