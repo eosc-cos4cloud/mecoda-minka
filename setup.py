@@ -5,13 +5,12 @@ from os.path import basename, splitext
 
 from setuptools import find_packages, setup
 
-
 with open("README.md", "r") as readme_file:
     readme = readme_file.read()
 
 setup(
     name="mecoda-minka",
-    version="1.1.0",
+    version="1.2.0",
     description="Library to download information collected in Minka API.",
     author="Ana Alvarez",
     author_email="anomalia@disroot.org",
