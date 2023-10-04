@@ -1,14 +1,16 @@
-from datetime import date
-from .models import Project, Observation, TAXONS, ICONIC_TAXON, Photo
-from typing import List, Dict, Any, Union, Optional
-import requests
-from contextlib import suppress
-import urllib3
-import pandas as pd
 import os
 import shutil
+from contextlib import suppress
+from datetime import date
+from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
+import pandas as pd
 import pkg_resources
+import requests
+import urllib3
+
+from .models import ICONIC_TAXON, TAXONS, Observation, Photo, Project
 
 urllib3.disable_warnings()
 
@@ -25,7 +27,7 @@ def get_project(project: Union[str, int]) -> List[Project]:
 
         if page.status_code == 404:
             print("Project ID not found")
-            raise ValueError(f"The {project} was not found")
+            return []
         else:
             resultado = [Project(**page.json())]
             return resultado
@@ -49,7 +51,7 @@ def get_obs(
     num_max: Optional[int] = None,
     starts_on: Optional[str] = None,  # Must be observed on or after this date
     ends_on: Optional[str] = None,  # Must be observed on or before this date
-    created_on: Optional[str] = None # Day YYYY-MM-DD
+    created_on: Optional[str] = None,  # Day YYYY-MM-DD
 ) -> List[Observation]:
     """
     Function to extract the observations and that supports different filters
@@ -87,24 +89,25 @@ def _build_url(
     year: Optional[int] = None,
     start_on: Optional[date] = None,
     ends_on: Optional[date] = None,
-    created_on: Optional[date] = None, # day YYYY-MM-DD
+    created_on: Optional[date] = None,  # day YYYY-MM-DD
 ) -> str:
     """
     Internal function to build the url to which the observation request
     will be made
     """
     # define base url
-    if id_project is not None:
-        base_url = f"{API_URL}/observations/project/{id_project}.json"
-    elif id_obs is not None:
+    if id_obs is not None:
         base_url = f"{API_URL}/observations/{id_obs}.json"
-    elif user is not None:
-        base_url = f"{API_URL}/observations/{user}.json"
     else:
-        base_url = f"{API_URL}/observations.json"
+        # base_url = f"{API_URL}/observations.json"
+        base_url = f"{API_URL}:4000/v1/observations"
 
     # define the arguments that the API supports
     args = []
+    if id_project is not None:
+        args.append(f"project_id={id_project}")
+    if user is not None:
+        args.append(f"user_login={user}")
     if created_on is not None:
         args.append(f"created_on={created_on}")
     if start_on is not None:
@@ -140,11 +143,9 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
     observations = []
 
     for data in observations_data:
-
         with suppress(KeyError):
             if data["place_guess"] is not None:
-                data["place_name"] = data["place_guess"].replace(
-                    "\r\n", " ").strip()
+                data["place_name"] = data["place_guess"].replace("\r\n", " ").strip()
 
         with suppress(KeyError):
             try:
@@ -157,17 +158,12 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
                 data["taxon_ancestry"] = None
 
         with suppress(KeyError):
-            lista_fotos = []
-            for observation_photo in data["photos"]:
-                lista_fotos.append(
-                    Photo(
-                        id=observation_photo["id"],
-                        large_url=observation_photo["large_url"],
-                        medium_url=observation_photo["medium_url"],
-                        small_url=observation_photo["small_url"],
-                    )
-                )
-            data["photos"] = lista_fotos
+            try:
+                data["latitude"] = data["location"].split(",")[0]
+                data["longitude"] = data["location"].split(",")[1]
+            except:
+                data["latitude"] = None
+                data["longitude"] = None
 
         with suppress(KeyError):
             lista_fotos = []
@@ -175,15 +171,34 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
                 lista_fotos.append(
                     Photo(
                         id=observation_photo["id"],
-                        large_url=observation_photo["photo"]["large_url"],
-                        medium_url=observation_photo["photo"]["medium_url"],
-                        small_url=observation_photo["photo"]["small_url"],
+                        large_url=observation_photo["photo"]["url"].replace(
+                            "/square", "/large"
+                        ),
+                        medium_url=observation_photo["photo"]["url"].replace(
+                            "/square", "/medium"
+                        ),
+                        small_url=observation_photo["photo"]["url"].replace(
+                            "/square", "/small"
+                        ),
                     )
                 )
             data["photos"] = lista_fotos
 
         with suppress(KeyError):
-            data["iconic_taxon"] = ICONIC_TAXON[data["iconic_taxon_id"]]
+            try:
+                try:
+                    data["iconic_taxon"] = ICONIC_TAXON[
+                        data["taxon"]["iconic_taxon_id"]
+                    ]
+                except:
+                    # request de un solo id de observación
+                    data["iconic_taxon"] = ICONIC_TAXON[data["iconic_taxon_id"]]
+            except:
+                data["iconic_taxon"] = None
+
+        with suppress(KeyError):
+            data["user_id"] = data["user"]["id"]
+            data["user_login"] = data["user"]["login"]
 
         # removal of line breaks in the description field
         with suppress(KeyError):
@@ -210,11 +225,9 @@ def _request(arg_url: str, num_max: Optional[int] = None) -> List[Observation]:
         raise ValueError("Not found")
 
     elif page.status_code == 200:
-        if type(page.json()) is dict:
-            observations.extend(_build_observations([page.json()]))
-        else:
-            while len(page.json()) == 200:
-                observations.extend(_build_observations(page.json()))
+        try:
+            while len(page.json()["results"]) == 200:
+                observations.extend(_build_observations(page.json()["results"]))
                 n += 1
                 if n > 49:
                     print("WARNING: Only the first 10,000 results are displayed")
@@ -225,10 +238,13 @@ def _request(arg_url: str, num_max: Optional[int] = None) -> List[Observation]:
                 page = requests.get(url)
                 print(f"Number of elements: {len(observations)}")
 
-            observations.extend(_build_observations(page.json()))
-
+            observations.extend(_build_observations(page.json()["results"]))
             if num_max:
                 observations = observations[:num_max]
+
+        except:
+            # Caso de los requests con el id de una única observación
+            observations.extend(_build_observations([page.json()]))
 
         print(f"Number of elements: {len(observations)}")
 
@@ -239,21 +255,20 @@ def get_dfs(observations) -> pd.DataFrame:
     """
     Function to extract dataframe from observations and dataframe from photos.
     """
-    df = pd.DataFrame([obs.dict() for obs in observations])
+    df = pd.DataFrame([obs.model_dump() for obs in observations])
     df["taxon_id"] = df["taxon_id"].astype(float).apply(lambda x: f"{x:.0f}")
 
     df_observations = df.drop(["photos"], axis=1)
-    df_observations["created_at"] = (
-        df_observations["created_at"].apply(
-            lambda x: x.date()).astype("datetime64[ns]")
-    )
-    df_observations["updated_at"] = (
-        df_observations["updated_at"].apply(
-            lambda x: x.date()).astype("datetime64[ns]")
-    )
-    df_observations["observed_on"] = df_observations["observed_on"].astype(
-        "datetime64[ns]"
-    )
+    df_observations["created_at"] = pd.to_datetime(
+        df_observations["created_at"], format="%Y-%m-%d %H:%M:%S", utc=True
+    ).dt.date
+    df_observations["updated_at"] = pd.to_datetime(
+        df_observations["updated_at"], format="%Y-%m-%d %H:%M:%S", utc=True
+    ).dt.date
+    df_observations["observed_on"] = pd.to_datetime(
+        df_observations["observed_on"], format="%Y-%m-%d %H:%M:%S", utc=True
+    ).dt.date
+
     _get_taxon_columns(df_observations)
 
     df_photos = df[
@@ -286,16 +301,14 @@ def get_dfs(observations) -> pd.DataFrame:
         df_photos["photos.id"].astype(float).apply(lambda x: f"{x:.0f}")
     )
     df_photos["path"] = (
-        df_photos["id"].astype(str) + "_" +
-        df_photos["photos.id"].astype(str) + ".jpg"
+        df_photos["id"].astype(str) + "_" + df_photos["photos.id"].astype(str) + ".jpg"
     )
 
     return df_observations, df_photos
 
 
 def _get_taxon_columns(df_obs: pd.DataFrame):
-    file_path = pkg_resources.resource_filename(
-        "mecoda_minka", "data/taxon_tree.csv")
+    file_path = pkg_resources.resource_filename("mecoda_minka", "data/taxon_tree.csv")
     df_taxon = pd.read_csv(file_path)
     df_obs["taxon_ancestry"] = df_obs["taxon_ancestry"].apply(
         lambda x: _get_dict_taxon(x, df_taxon)
@@ -303,6 +316,7 @@ def _get_taxon_columns(df_obs: pd.DataFrame):
 
     for level in ["kingdom", "phylum", "class", "order", "family", "genus"]:
         df_obs[level] = df_obs.taxon_ancestry.str.get(level)
+
     df_obs.drop(columns=["taxon_ancestry"], inplace=True)
 
 
@@ -312,9 +326,13 @@ def _get_dict_taxon(ancestry_string, df_taxon):
         list_ancestries = ancestry_string.split("/")
         for ancestry in list_ancestries:
             if int(ancestry) != 1:
-                rank = df_taxon[df_taxon["id"] == int(ancestry)]["rank"].item()
-                name = df_taxon[df_taxon["id"] == int(ancestry)]["name"].item()
-                data[rank] = name
+                try:
+                    rank = df_taxon[df_taxon["id"] == int(ancestry)]["rank"].item()
+                    name = df_taxon[df_taxon["id"] == int(ancestry)]["name"].item()
+                    data[rank] = name
+                except:
+                    # para rangos intermedios, no los incluye
+                    continue
     except:
         data = None
 
@@ -338,8 +356,7 @@ def extra_info(df_observations) -> pd.DataFrame:
             user_identification = idents[0]["user"]["login"]
             first_taxon_name = idents[0]["taxon"]["name"]
             last_taxon_name = idents[len(idents) - 1]["taxon"]["name"]
-            dic[id_num] = [user_identification,
-                           first_taxon_name, last_taxon_name]
+            dic[id_num] = [user_identification, first_taxon_name, last_taxon_name]
         else:
             dic[id_num] = [0, 0, 0]
 
@@ -368,8 +385,7 @@ def extra_info(df_observations) -> pd.DataFrame:
 
 
 def download_photos(
-    df_photos: pd.DataFrame, 
-    directorio: Optional[str] = "minka_photos"
+    df_photos: pd.DataFrame, directorio: Optional[str] = "minka_photos"
 ):
     """
     Function to download the photos resulting from the query.
@@ -436,7 +452,6 @@ def get_dwc_from_query(
     start_on: Optional[date] = None,
     ends_on: Optional[date] = None,
 ) -> str:
-
     base_url = _build_url_dwc(
         id_obs,
         user_id,

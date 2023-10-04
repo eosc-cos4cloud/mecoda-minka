@@ -2,22 +2,24 @@
 # -*- coding: iso-8859-15 -*-
 
 import datetime
-import pytest
+
 import pandas as pd
+import pytest
+from pydantic_core._pydantic_core import TzInfo
+
 from mecoda_minka import (
-    get_project,
-    get_obs,
+    ICONIC_TAXON,
+    TAXONS,
+    Observation,
+    Photo,
+    Project,
     get_count_by_taxon,
     get_dfs,
     get_dwc,
     get_dwc_from_query,
-    Project,
-    Observation,
-    Photo,
-    TAXONS,
-    ICONIC_TAXON,
+    get_obs,
+    get_project,
 )
-
 
 API_URL = "https://minka-sdg.org"
 
@@ -51,9 +53,7 @@ def test_get_project_from_id_extract_project_data():
 
 def test_get_project_from_not_found_id_raise_error(requests_mock, capsys):
     requests_mock.get(
-        f"{API_URL}/projects/11.json",
-        json={"error": "No encontrado"},
-        status_code=404
+        f"{API_URL}/projects/11.json", json={"error": "No encontrado"}, status_code=404
     )
     get_project(11)
     out, err = capsys.readouterr()
@@ -124,7 +124,7 @@ def test_get_obs_by_id_returns_observations_data(
                 16,
                 10,
                 39,
-                tzinfo=datetime.timezone(datetime.timedelta(seconds=7200)),
+                tzinfo=TzInfo(7200),
             ),
             updated_at=datetime.datetime(
                 2016,
@@ -133,7 +133,7 @@ def test_get_obs_by_id_returns_observations_data(
                 10,
                 44,
                 44,
-                tzinfo=datetime.timezone(datetime.timedelta(seconds=7200)),
+                tzinfo=TzInfo(7200),
             ),
             observed_on=datetime.datetime(2016, 7, 6, 0, 0),
             description="",
@@ -141,8 +141,9 @@ def test_get_obs_by_id_returns_observations_data(
             taxon_id=2850,
             taxon_name="Rissoella verruculosa",
             taxon_ancestry=None,
-            latitude="41.773743",
-            longitude="3.021853",
+            location="41.773743,3.021853",
+            # latitude="41.773743",
+            # longitude="3.021853",
             quality_grade="research",
             user_id=626,
             user_login="amxatrac",
@@ -165,7 +166,7 @@ def test_get_obs_by_id_returns_observations_data(
         )
     ]
     requests_mock.get(
-        f"{API_URL}/observations/2084.json",
+        f"{API_URL}/observations/2084.json?&per_page=200",
         json={
             "id": 2084,
             "captive": "false",
@@ -174,7 +175,11 @@ def test_get_obs_by_id_returns_observations_data(
             "observed_on": "2016-07-06",
             "description": "",
             "iconic_taxon_id": 16,
-            "taxon": {"id": 2850, "name": "Rissoella verruculosa", "ancestry": None},
+            "taxon": {
+                "id": 2850,
+                "name": "Rissoella verruculosa",
+                "ancestry": None,
+            },
             "latitude": "41.773743",
             "longitude": "3.021853",
             "quality_grade": "research",
@@ -215,26 +220,35 @@ def test_get_obs_from_query_returns_observations_data_when_less_than_pagination(
         Observation(
             id=id,
             iconic_taxon="animalia",
-            created_at=datetime.datetime(
-                2021,
-                3,
-                15,
-                16,
-                10,
-                39,
-                tzinfo=datetime.timezone(datetime.timedelta(seconds=7200)),
-            ),
+            created_at=datetime.datetime(2021, 3, 15, 16, 10, 39, tzinfo=TzInfo(7200)),
         )
         for id in range(3)
     ]
     requests_mock.get(
-        f'{API_URL}/observations.json?q="quercus quercus"&per_page=200',
-        json=[
-            {"id": id, "iconic_taxon_id": 2,
-                "created_at": "2021-03-15T16:10:39+02:00"}
-            for id in range(3)
-        ],
+        "https://minka-sdg.org:4000/v1/observations?q=%22quercus%20quercus%22&per_page=200",
+        json={
+            "total_results": 147,
+            "page": 1,
+            "per_page": 200,
+            "results": [
+                {
+                    "id": id,
+                    "taxon": {"iconic_taxon_id": 2},
+                    "created_at": "2021-03-15T16:10:39+02:00",
+                }
+                for id in range(3)
+            ],
+        },
     )
+    """requests_mock.get(
+        f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200',
+        json=[{
+                "id": id, 
+                "iconic_taxon_id": 2,
+                "created_at": "2021-03-15T16:10:39+02:00"
+            } for id in range(3)
+        ],
+    )"""
 
     result = get_obs(query="quercus quercus")
 
@@ -245,7 +259,6 @@ def test_get_obs_from_query_returns_observations_data_when_less_than_pagination(
 def test_get_obs_returns_observations_data_when_more_than_pagination(
     requests_mock,
 ) -> None:
-
     expected_result = [
         Observation(
             id=id,
@@ -256,29 +269,36 @@ def test_get_obs_returns_observations_data_when_more_than_pagination(
     ]
 
     requests_mock.get(
-        f'{API_URL}/observations.json?q="quercus quercus"&per_page=200',
-        json=[
-            {
-                "id": id_,
-                "description": "Pavo real en su hábitat natural",
-                "observed_on": "2021-03-15",
-            }
-            for id_ in range(200)
-        ],
+        f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200',
+        json={
+            "total_results": 200,
+            "page": 1,
+            "per_page": 200,
+            "results": [
+                {
+                    "id": id_,
+                    "description": "Pavo real en su hábitat natural",
+                    "observed_on": "2021-03-15",
+                }
+                for id_ in range(200)
+            ],
+        },
     )
     requests_mock.get(
-        f'{API_URL}/observations.json?q="quercus quercus"&per_page=200&page=2',
-        json=[
-            {
-                "id": id_,
-                "description": "Pavo real en su hábitat natural",
-                "observed_on": "2021-03-15",
-            }
-            for id_ in range(200, 250)
-        ],
+        f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200&page=2',
+        json={
+            "results": [
+                {
+                    "id": id_,
+                    "description": "Pavo real en su hábitat natural",
+                    "observed_on": "2021-03-15",
+                }
+                for id_ in range(200, 250)
+            ],
+        },
     )
     requests_mock.get(
-        f'{API_URL}/observations.json?q="quercus quercus"&per_page=200&page=100',
+        f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200&page=100',
         json=[],
     )
 
@@ -294,19 +314,23 @@ def test_get_obs_returns_error_when_more_than_10000_results(
 ) -> None:
     """The API will return an error."""
     requests_mock.get(
-        f'{API_URL}/observations.json?q="quercus quercus"&per_page=200',
-        json=[{"id": id_, "iconic_taxon_id": 3} for id_ in range(0, 200)],
+        f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200',
+        json={
+            "results": [{"id": id_, "iconic_taxon_id": 3} for id_ in range(0, 200)],
+        },
     )
     for page in range(2, 100):
         requests_mock.get(
-            f'{API_URL}/observations.json?q="quercus quercus"&per_page=200&page={page}',
-            json=[
-                {"id": id_, "iconic_taxon_id": 3}
-                for id_ in range(200 * (page - 1), 200 * page)
-            ],
+            f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200&page={page}',
+            json={
+                "results": [
+                    {"id": id_, "iconic_taxon_id": 3}
+                    for id_ in range(200 * (page - 1), 200 * page)
+                ],
+            },
         )
     requests_mock.get(
-        f'{API_URL}/observations.json?q="quercus quercus"&per_page=200&page=101',
+        f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200&page=101',
         json={"message": "You reach 10,000 items limit"},
     )
 
@@ -330,24 +354,28 @@ def test_get_obs_from_user_returns_observations_data(
         for id_ in range(260)
     ]
     requests_mock.get(
-        f"{API_URL}/observations/zolople.json?per_page=200",
-        json=[
-            {
-                "user_id": 425,
-                "id": id_,
-            }
-            for id_ in range(200)
-        ],
+        f"{API_URL}:4000/v1/observations?user_login=zolople&per_page=200",
+        json={
+            "results": [
+                {
+                    "user_id": 425,
+                    "id": id_,
+                }
+                for id_ in range(200)
+            ],
+        },
     )
     requests_mock.get(
-        f"{API_URL}/observations/zolople.json?per_page=200&page=2",
-        json=[
-            {
-                "user_id": 425,
-                "id": id_,
-            }
-            for id_ in range(200, 260)
-        ],
+        f"{API_URL}:4000/v1/observations?user_login=zolople&per_page=200&page=2",
+        json={
+            "results": [
+                {
+                    "user_id": 425,
+                    "id": id_,
+                }
+                for id_ in range(200, 260)
+            ],
+        },
     )
 
     result = get_obs(user="zolople")
@@ -372,16 +400,18 @@ def test_get_obs_project_returns_observations_data(
     ]
 
     requests_mock.get(
-        f"{API_URL}/observations/project/20.json?per_page=200",
-        json=[
-            {
-                "id": 1,
-                "user_id": id_,
-                "iconic_taxon_id": 7,
-                "taxon": {"id": 481, "name": "Hedera", "ancestry": None},
-            }
-            for id_ in range(37)
-        ],
+        f"{API_URL}:4000/v1/observations?project_id=20&per_page=200",
+        json={
+            "results": [
+                {
+                    "id": 1,
+                    "user_id": id_,
+                    "iconic_taxon_id": 7,
+                    "taxon": {"id": 481, "name": "Hedera", "ancestry": None},
+                }
+                for id_ in range(37)
+            ],
+        },
     )
     result = get_obs(id_project=20)
 
@@ -457,52 +487,58 @@ def test_get_obs_from_taxon_returns_info_with_pagination(
     ]
 
     requests_mock.get(
-        f"{API_URL}/observations.json?iconic_taxa=Fungi&per_page=200",
-        json=[
-            {
-                "iconic_taxon_id": 13,
-                "id": 313430,
-                "taxon": {
-                    "id": 39432,
-                    "name": "Cheilymenia theleboloides",
-                    "ancestry": None,
-                },
-                "updated_at": "2021-07-12T23:36:48+02:00",
-            }
-            for id_ in range(200)
-        ],
+        f"{API_URL}:4000/v1/observations?iconic_taxa=Fungi&per_page=200",
+        json={
+            "results": [
+                {
+                    "iconic_taxon_id": 13,
+                    "id": 313430,
+                    "taxon": {
+                        "id": 39432,
+                        "name": "Cheilymenia theleboloides",
+                        "ancestry": None,
+                    },
+                    "updated_at": "2021-07-12T23:36:48+02:00",
+                }
+                for id_ in range(200)
+            ],
+        },
     )
     requests_mock.get(
-        f"{API_URL}/observations.json?iconic_taxa=Fungi&per_page=200&page=2",
-        json=[
-            {
-                "iconic_taxon_id": 13,
-                "id": 313430,
-                "taxon": {
-                    "id": 39432,
-                    "name": "Cheilymenia theleboloides",
-                    "ancestry": None,
-                },
-                "updated_at": "2021-07-12T23:36:48+02:00",
-            }
-            for id_ in range(200)
-        ],
+        f"{API_URL}:4000/v1/observations?iconic_taxa=Fungi&per_page=200&page=2",
+        json={
+            "results": [
+                {
+                    "iconic_taxon_id": 13,
+                    "id": 313430,
+                    "taxon": {
+                        "id": 39432,
+                        "name": "Cheilymenia theleboloides",
+                        "ancestry": None,
+                    },
+                    "updated_at": "2021-07-12T23:36:48+02:00",
+                }
+                for id_ in range(200)
+            ],
+        },
     )
     requests_mock.get(
-        f"{API_URL}/observations.json?iconic_taxa=Fungi&per_page=200&page=3",
-        json=[
-            {
-                "iconic_taxon_id": 13,
-                "id": 313430,
-                "taxon": {
-                    "id": 39432,
-                    "name": "Cheilymenia theleboloides",
-                    "ancestry": None,
-                },
-                "updated_at": "2021-07-12T23:36:48+02:00",
-            }
-            for id_ in range(56)
-        ],
+        f"{API_URL}:4000/v1/observations?iconic_taxa=Fungi&per_page=200&page=3",
+        json={
+            "results": [
+                {
+                    "iconic_taxon_id": 13,
+                    "id": 313430,
+                    "taxon": {
+                        "id": 39432,
+                        "name": "Cheilymenia theleboloides",
+                        "ancestry": None,
+                    },
+                    "updated_at": "2021-07-12T23:36:48+02:00",
+                }
+                for id_ in range(56)
+            ],
+        },
     )
     result = get_obs(taxon="Fungi")
 
@@ -535,43 +571,49 @@ def test_get_obs_from_place_id_returns_obs(
     ]
 
     requests_mock.get(
-        f"{API_URL}/observations.json?place_id=1011&per_page=200",
-        json=[
-            {
-                "taxon": {"id": 2948, "name": "Holothuria", "ancestry": None},
-                "id": 1645,
-                "iconic_taxon_id": 3,
-                "user_login": "andrea",
-                "created_at": "2021-08-15T19:43:43+02:00",
-            }
-            for id_ in range(200)
-        ],
+        f"{API_URL}:4000/v1/observations?place_id=1011&per_page=200",
+        json={
+            "results": [
+                {
+                    "taxon": {"id": 2948, "name": "Holothuria", "ancestry": None},
+                    "id": 1645,
+                    "iconic_taxon_id": 3,
+                    "user_login": "andrea",
+                    "created_at": "2021-08-15T19:43:43+02:00",
+                }
+                for id_ in range(200)
+            ],
+        },
     )
     requests_mock.get(
-        f"{API_URL}/observations.json?place_id=1011&per_page=200&page=2",
-        json=[
-            {
-                "taxon": {"id": 2948, "name": "Holothuria", "ancestry": None},
-                "id": 1645,
-                "iconic_taxon_id": 3,
-                "user_login": "andrea",
-                "created_at": "2021-08-15T19:43:43+02:00",
-            }
-            for id_ in range(200)
-        ],
+        f"{API_URL}:4000/v1/observations?place_id=1011&per_page=200&page=2",
+        json={
+            "results": [
+                {
+                    "taxon": {"id": 2948, "name": "Holothuria", "ancestry": None},
+                    "id": 1645,
+                    "iconic_taxon_id": 3,
+                    "user_login": "andrea",
+                    "created_at": "2021-08-15T19:43:43+02:00",
+                }
+                for id_ in range(200)
+            ],
+        },
     )
     requests_mock.get(
-        f"{API_URL}/observations.json?place_id=1011&per_page=200&page=3",
-        json=[
-            {
-                "taxon": {"id": 2948, "name": "Holothuria", "ancestry": None},
-                "id": 1645,
-                "iconic_taxon_id": 3,
-                "user_login": "andrea",
-                "created_at": "2021-08-15T19:43:43+02:00",
-            }
-            for id_ in range(56)
-        ],
+        f"{API_URL}:4000/v1/observations?place_id=1011&per_page=200&page=3",
+        json={
+            "results": [
+                {
+                    "taxon": {"id": 2948, "name": "Holothuria", "ancestry": None},
+                    "id": 1645,
+                    "iconic_taxon_id": 3,
+                    "user_login": "andrea",
+                    "created_at": "2021-08-15T19:43:43+02:00",
+                }
+                for id_ in range(56)
+            ],
+        },
     )
     result = get_obs(place_id=1011)
 
@@ -584,14 +626,16 @@ def test_get_obs_from_taxon_min_returns_info(
     requests_mock,
 ) -> None:
     requests_mock.get(
-        f"{API_URL}/observations.json?iconic_taxa=Fungi&per_page=200",
-        json=[
-            {
-                "id": 1645,
-                "iconic_taxon_id": 13,
-            }
-            for id_ in range(57)
-        ],
+        f"{API_URL}:4000/v1/observations?iconic_taxa=Fungi&per_page=200",
+        json={
+            "results": [
+                {
+                    "id": 1645,
+                    "iconic_taxon_id": 13,
+                }
+                for id_ in range(57)
+            ],
+        },
     )
 
     result = get_obs(taxon="fungi")
@@ -604,13 +648,15 @@ def test_get_obs_from_combined_arguments(
     requests_mock,
 ) -> None:
     requests_mock.get(
-        f"{API_URL}/observations/zolople.json?iconic_taxa=Mollusca&per_page=200",
-        json=[
-            {
-                "id": id_,
-            }
-            for id_ in range(5)
-        ],
+        f"{API_URL}:4000/v1/observations?user_login=zolople&iconic_taxa=Mollusca&per_page=200",
+        json={
+            "results": [
+                {
+                    "id": id_,
+                }
+                for id_ in range(5)
+            ],
+        },
     )
     result = get_obs(taxon="Mollusca", user="zolople")
 
@@ -622,11 +668,13 @@ def test_get_obs_from_three_combined_arguments(
     requests_mock,
 ) -> None:
     requests_mock.get(
-        f'{API_URL}/observations/project/45.json?place_id=3&q="quercus quercus"&per_page=200',
-        json=[
-            {"id": 4586, "project": 45, "place": 3, "species": "quercus quercus"},
-            {"id": 4588, "project": 45, "place": 3, "species": "quercus quercus"},
-        ],
+        f'{API_URL}:4000/v1/observations?project_id=45&place_id=3&q="quercus quercus"&per_page=200',
+        json={
+            "results": [
+                {"id": 4586, "project": 45, "place": 3, "species": "quercus quercus"},
+                {"id": 4588, "project": 45, "place": 3, "species": "quercus quercus"},
+            ],
+        },
     )
     result = get_obs(id_project=45, place_id=3, query="quercus quercus")
 
@@ -678,13 +726,15 @@ def test_get_obs_from_year_returns_obs(
         for id_ in range(150)
     ]
     requests_mock.get(
-        f"{API_URL}/observations.json?year=2018&per_page=200",
-        json=[
-            {
-                "id": id_,
-            }
-            for id_ in range(150)
-        ],
+        f"{API_URL}:4000/v1/observations?year=2018&per_page=200",
+        json={
+            "results": [
+                {
+                    "id": id_,
+                }
+                for id_ in range(150)
+            ],
+        },
     )
     result = get_obs(year=2018)
 
@@ -702,16 +752,18 @@ def test_get_obs_with_num_max(
         for id_ in range(10)
     ]
     requests_mock.get(
-        f"{API_URL}/observations.json?iconic_taxa=Fungi&per_page=200",
-        json=[
-            {
-                "id": id_,
-            }
-            for id_ in range(200)
-        ],
+        f"{API_URL}:4000/v1/observations?iconic_taxa=Fungi&per_page=200",
+        json={
+            "results": [
+                {
+                    "id": id_,
+                }
+                for id_ in range(200)
+            ],
+        },
     )
-
     result = get_obs(taxon="fungi", num_max=10)
+
     assert result == expected_result
     assert len(result) == 10
 
@@ -839,8 +891,9 @@ def test_get_dwc() -> None:
 
     assert len(result) == 3
     assert type(result) == pd.DataFrame
-    assert len(result.columns) == 37
-    assert result['institutionCode'].iloc[0] == "Minka"
+
+    assert len(result.columns) == 35
+    assert result["institutionCode"].iloc[0] == "Minka"
 
 
 def test_get_dwc_from_query() -> None:
@@ -849,9 +902,9 @@ def test_get_dwc_from_query() -> None:
         taxon_id=4,  # filo chordata
         place_id=55,  # spain
         start_on="2022-10-01",
-        ends_on="2022-10-10"
+        ends_on="2022-10-10",
     )
     assert len(result) > 70
     assert type(result) == pd.DataFrame
-    assert len(result.columns) >= 36
-    assert result['institutionCode'].iloc[0] == "Minka"
+    assert len(result.columns) >= 33
+    assert result["institutionCode"].iloc[0] == "Minka"
