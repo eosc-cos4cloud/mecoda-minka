@@ -161,10 +161,12 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
             try:
                 data["taxon_id"] = int(data["taxon"]["id"])
                 data["taxon_name"] = data["taxon"]["name"]
+                data["taxon_rank"] = data["taxon"]["rank"]
                 data["taxon_ancestry"] = data["taxon"]["ancestry"]
             except:
                 data["taxon_id"] = None
                 data["taxon_name"] = None
+                data["taxon_rank"] = None
                 data["taxon_ancestry"] = None
 
         with suppress(KeyError):
@@ -211,6 +213,8 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
         with suppress(KeyError):
             data["user_id"] = data["user"]["id"]
             data["user_login"] = data["user"]["login"]
+
+        with suppress(KeyError):
             data["license_obs"] = data["license_code"]
 
         # removal of line breaks in the description field
