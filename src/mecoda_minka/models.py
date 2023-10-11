@@ -74,6 +74,7 @@ class Observation(BaseModel):
     iconic_taxon: Optional[str] = None
     taxon_id: Optional[int] = None
     taxon_name: Optional[str] = None
+    taxon_rank: Optional[str] = None
     taxon_ancestry: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
