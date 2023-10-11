@@ -52,6 +52,8 @@ def get_obs(
     starts_on: Optional[str] = None,  # Must be observed on or after this date
     ends_on: Optional[str] = None,  # Must be observed on or before this date
     created_on: Optional[str] = None,  # Day YYYY-MM-DD
+    created_d1: Optional[str] = None,  # Must be created on or after this date
+    created_d2: Optional[str] = None,  # Must be created on or before this date
 ) -> List[Observation]:
     """
     Function to extract the observations and that supports different filters
@@ -71,6 +73,8 @@ def get_obs(
         starts_on,
         ends_on,
         created_on,
+        created_d1,
+        created_d2,
     )
 
     observations = _request(url, num_max)
@@ -90,6 +94,8 @@ def _build_url(
     start_on: Optional[date] = None,
     ends_on: Optional[date] = None,
     created_on: Optional[date] = None,  # day YYYY-MM-DD
+    created_d1: Optional[date] = None,
+    created_d2: Optional[date] = None,
 ) -> str:
     """
     Internal function to build the url to which the observation request
@@ -110,6 +116,10 @@ def _build_url(
         args.append(f"user_login={user}")
     if created_on is not None:
         args.append(f"created_on={created_on}")
+    if created_d1 is not None:
+        args.append(f"created_d1={created_d1}")
+    if created_d2 is not None:
+        args.append(f"created_d2={created_d2}")
     if start_on is not None:
         args.append(f"d1={start_on}")
     if ends_on is not None:
@@ -170,7 +180,7 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
             for observation_photo in data["observation_photos"]:
                 lista_fotos.append(
                     Photo(
-                        id=observation_photo["id"],
+                        id=observation_photo["photo"]["id"],
                         large_url=observation_photo["photo"]["url"].replace(
                             "/square", "/large"
                         ),
@@ -180,6 +190,8 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
                         small_url=observation_photo["photo"]["url"].replace(
                             "/square", "/small"
                         ),
+                        license_photo=observation_photo["photo"]["license_code"],
+                        attribution=observation_photo["photo"]["attribution"],
                     )
                 )
             data["photos"] = lista_fotos
@@ -199,6 +211,7 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
         with suppress(KeyError):
             data["user_id"] = data["user"]["id"]
             data["user_login"] = data["user"]["login"]
+            data["license_obs"] = data["license_code"]
 
         # removal of line breaks in the description field
         with suppress(KeyError):
@@ -270,7 +283,6 @@ def get_dfs(observations) -> pd.DataFrame:
     ).dt.date
 
     _get_taxon_columns(df_observations)
-
     df_photos = df[
         [
             "id",
@@ -283,25 +295,30 @@ def get_dfs(observations) -> pd.DataFrame:
         ]
     ]
     df_photos = df_photos.explode("photos").reset_index(drop=True)
-    df_photos["photos.id"] = df_photos.photos.str.get("id")
-    df_photos["photos.medium_url"] = df_photos.photos.str.get("medium_url")
+    df_photos["photos_id"] = df_photos.photos.str.get("id")
+    df_photos["photos_medium_url"] = df_photos.photos.str.get("medium_url")
+    df_photos["license_photo"] = df_photos.photos.str.get("license_photo")
+    df_photos["attribution"] = df_photos.photos.str.get("attribution")
+
     df_photos = df_photos[
         [
             "id",
-            "photos.id",
+            "photos_id",
             "iconic_taxon",
             "taxon_name",
-            "photos.medium_url",
+            "photos_medium_url",
             "user_login",
             "latitude",
             "longitude",
+            "license_photo",
+            "attribution",
         ]
     ]
-    df_photos["photos.id"] = (
-        df_photos["photos.id"].astype(float).apply(lambda x: f"{x:.0f}")
+    df_photos["photos_id"] = (
+        df_photos["photos_id"].astype(float).apply(lambda x: f"{x:.0f}")
     )
     df_photos["path"] = (
-        df_photos["id"].astype(str) + "_" + df_photos["photos.id"].astype(str) + ".jpg"
+        df_photos["id"].astype(str) + "_" + df_photos["photos_id"].astype(str) + ".jpg"
     )
 
     return df_observations, df_photos
