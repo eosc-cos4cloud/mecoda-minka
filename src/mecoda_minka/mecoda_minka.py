@@ -179,23 +179,38 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
 
         with suppress(KeyError):
             lista_fotos = []
-            for observation_photo in data["observation_photos"]:
-                lista_fotos.append(
-                    Photo(
-                        id=observation_photo["photo"]["id"],
-                        large_url=observation_photo["photo"]["url"].replace(
-                            "/square", "/large"
-                        ),
-                        medium_url=observation_photo["photo"]["url"].replace(
-                            "/square", "/medium"
-                        ),
-                        small_url=observation_photo["photo"]["url"].replace(
-                            "/square", "/small"
-                        ),
-                        license_photo=observation_photo["photo"]["license_code"],
-                        attribution=observation_photo["photo"]["attribution"],
+            # Caso para las observaciones filtradas por id
+            if len(observations_data) == 1:
+                for observation_photo in data["observation_photos"]:
+                    lista_fotos.append(
+                        Photo(
+                            id=observation_photo["photo"]["id"],
+                            large_url=observation_photo["photo"]["large_url"],
+                            medium_url=observation_photo["photo"]["medium_url"],
+                            small_url=observation_photo["photo"]["small_url"],
+                            license_photo=observation_photo["photo"]["license_code"],
+                            attribution=observation_photo["photo"]["attribution"],
+                        )
                     )
-                )
+            # Resto de búsquedas
+            else:
+                for observation_photo in data["observation_photos"]:
+                    lista_fotos.append(
+                        Photo(
+                            id=observation_photo["photo"]["id"],
+                            large_url=observation_photo["photo"]["url"].replace(
+                                "/square", "/large"
+                            ),
+                            medium_url=observation_photo["photo"]["url"].replace(
+                                "/square", "/medium"
+                            ),
+                            small_url=observation_photo["photo"]["url"].replace(
+                                "/square", "/small"
+                            ),
+                            license_photo=observation_photo["photo"]["license_code"],
+                            attribution=observation_photo["photo"]["attribution"],
+                        )
+                    )
             data["photos"] = lista_fotos
 
         with suppress(KeyError):
@@ -215,7 +230,10 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
             data["user_login"] = data["user"]["login"]
 
         with suppress(KeyError):
-            data["license_obs"] = data["license_code"]
+            try:
+                data["license_obs"] = data["license_code"]
+            except:
+                data["license_obs"] = data["license"]
 
         # removal of line breaks in the description field
         with suppress(KeyError):
@@ -260,7 +278,7 @@ def _request(arg_url: str, num_max: Optional[int] = None) -> List[Observation]:
                 observations = observations[:num_max]
 
         except:
-            # Caso de los requests con el id de una única observación
+            # Caso de los requests con el id de una única observación, no tienen results
             observations.extend(_build_observations([page.json()]))
 
         print(f"Number of elements: {len(observations)}")
@@ -285,6 +303,9 @@ def get_dfs(observations) -> pd.DataFrame:
     df_observations["observed_on"] = pd.to_datetime(
         df_observations["observed_on"], format="%Y-%m-%d %H:%M:%S", utc=True
     ).dt.date
+
+    # Las observaciones con licencia None son Copyright
+    df_observations.loc[df_observations.license_obs.isnull(), "license_obs"] = "C"
 
     _get_taxon_columns(df_observations)
     df_photos = df[
@@ -324,7 +345,12 @@ def get_dfs(observations) -> pd.DataFrame:
     df_photos["path"] = (
         df_photos["id"].astype(str) + "_" + df_photos["photos_id"].astype(str) + ".jpg"
     )
-
+    # El campo queda en blanco en los C
+    df_photos.loc[
+        (df_photos["license_photo"].isnull())
+        & (df_photos.attribution.str.contains("all rights reserved")),
+        "license_photo",
+    ] = "C"
     return df_observations, df_photos
 
 
