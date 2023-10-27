@@ -47,6 +47,7 @@ def get_obs(
     taxon: Optional[str] = None,
     taxon_id: Optional[int] = None,
     place_id: Optional[int] = None,
+    introduced: Optional[bool] = None,
     year: Optional[int] = None,
     num_max: Optional[int] = None,
     starts_on: Optional[str] = None,  # Must be observed on or after this date
@@ -69,6 +70,7 @@ def get_obs(
         taxon,
         taxon_id,
         place_id,
+        introduced,
         year,
         starts_on,
         ends_on,
@@ -90,6 +92,7 @@ def _build_url(
     taxon: Optional[str] = None,
     taxon_id: Optional[int] = None,
     place_id: Optional[int] = None,
+    introduced: Optional[bool] = None,
     year: Optional[int] = None,
     start_on: Optional[date] = None,
     ends_on: Optional[date] = None,
@@ -132,16 +135,18 @@ def _build_url(
             raise ValueError("Not a valid taxonomy")
         args.append(f"iconic_taxa={taxon}")
     if place_id is not None:
-        args.append(f"place_id={place_id}")
+        if introduced is True:
+            args.append(f"introduced=true&place_id={place_id}")
+        else:
+            args.append(f"place_id={place_id}")
     if year is not None:
         args.append(f"year={year}")
     if taxon_id is not None:
         args.append(f"taxon_id={taxon_id}")
 
     url = f'{base_url}?{"&".join(args)}&per_page=200'
-
     # if no parameter indicated, it returns the last records
-
+    print(url)
     return url
 
 
@@ -307,7 +312,10 @@ def get_dfs(observations) -> pd.DataFrame:
     # Las observaciones con licencia None son Copyright
     df_observations.loc[df_observations.license_obs.isnull(), "license_obs"] = "C"
 
+    # Extraemos las columnas taxonómicas
     _get_taxon_columns(df_observations)
+
+    # Construimos el df de fotos
     df_photos = df[
         [
             "id",
@@ -324,7 +332,6 @@ def get_dfs(observations) -> pd.DataFrame:
     df_photos["photos_medium_url"] = df_photos.photos.str.get("medium_url")
     df_photos["license_photo"] = df_photos.photos.str.get("license_photo")
     df_photos["attribution"] = df_photos.photos.str.get("attribution")
-
     df_photos = df_photos[
         [
             "id",
@@ -348,9 +355,10 @@ def get_dfs(observations) -> pd.DataFrame:
     # El campo queda en blanco en los C
     df_photos.loc[
         (df_photos["license_photo"].isnull())
-        & (df_photos.attribution.str.contains("all rights reserved")),
+        & (df_photos["attribution"].str.contains("all rights reserved")),
         "license_photo",
     ] = "C"
+
     return df_observations, df_photos
 
 
