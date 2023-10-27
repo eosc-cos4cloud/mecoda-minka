@@ -10,7 +10,7 @@ with open("README.md", "r") as readme_file:
 
 setup(
     name="mecoda-minka",
-    version="1.3.0",
+    version="1.3.1",
     description="Library to download information using Minka API.",
     author="Ana Alvarez",
     author_email="ana.alvarez@icm.csic.es",
