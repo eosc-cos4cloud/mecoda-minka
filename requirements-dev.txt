@@ -1,4 +1,3 @@
 requests-mock
 pytest
 pytest-coverage
-folium
