@@ -20,10 +20,19 @@ TAXONS = [
     "Fungi",
     "Plantae",
     "Unknown",
+    "Cnidaria",
+    "Annelida",
+    "Platyhelminthes",
+    "Echinodermata",
+    "Bryozoa",
+    "Porifera",
+    "Elasmobranchii",
+    "Crustacea",
+    "Ctenophora",
 ]
 
 ICONIC_TAXON = {
-    1: "ser vivo",
+    1: "life",
     2: "animalia",
     3: "actinopterygii",
     5: "aves",
@@ -37,6 +46,15 @@ ICONIC_TAXON = {
     14: "protozoa",
     15: "mollusca",
     16: "chromista",
+    50: "cnidaria",
+    51: "annelida",
+    52: "platyhelminthes",
+    53: "echinodermata",
+    55: "bryozoa",
+    56: "porifera",
+    177: "elasmobranchii",
+    240789: "crustacea",
+    254021: "ctenophora",
 }
 
 
