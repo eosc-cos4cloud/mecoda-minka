@@ -98,7 +98,7 @@ The object `Observation` contains the information of each of the observations re
 | `latitude` | `Optional[float]` | Latitude | `None` |
 | `longitude` | `Optional[float]` | Longitude | `None` |
 | `place_name` | `Optional[str]` | Observation site name | `None` |
-| `quality_grade` | `Optional[QualityGrade]` | Quality grade: `basico` o `investigacion` |`None` |
+| `quality_grade` | `Optional[QualityGrade]` | Quality grade: `research`, `casual` o `needs_id` |`None` |
 | `user_id` | `Optional[int]` | User identification number | `None` |
 | `user_login` | `Optional[str]` | User registration name | `None` |
 | `photos` | `List[Photo]` | Object lists [`Photo`](#photo), that include information about each photograph of the observation | `[]` |
