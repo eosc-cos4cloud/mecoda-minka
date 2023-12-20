@@ -55,6 +55,7 @@ def get_obs(
     created_on: Optional[str] = None,  # Day YYYY-MM-DD
     created_d1: Optional[str] = None,  # Must be created on or after this date
     created_d2: Optional[str] = None,  # Must be created on or before this date
+    grade: Optional[str] = None,  # Must be one of this: research, casual, needs_id
 ) -> List[Observation]:
     """
     Function to extract the observations and that supports different filters
@@ -77,6 +78,7 @@ def get_obs(
         created_on,
         created_d1,
         created_d2,
+        grade,
     )
 
     observations = _request(url, num_max)
@@ -99,6 +101,7 @@ def _build_url(
     created_on: Optional[date] = None,  # day YYYY-MM-DD
     created_d1: Optional[date] = None,
     created_d2: Optional[date] = None,
+    grade: Optional[str] = None,
 ) -> str:
     """
     Internal function to build the url to which the observation request
@@ -143,6 +146,8 @@ def _build_url(
         args.append(f"year={year}")
     if taxon_id is not None:
         args.append(f"taxon_id={taxon_id}")
+    if grade is not None:
+        args.append(f"quality_grade={grade}")
 
     url = f'{base_url}?{"&".join(args)}&per_page=200'
     # if no parameter indicated, it returns the last records
