@@ -105,3 +105,4 @@ class Observation(BaseModel):
     num_identification_agreements: Optional[int] = None
     num_identification_disagreements: Optional[int] = None
     identifications_count: Optional[int] = None
+    grade: Optional[str] = None
