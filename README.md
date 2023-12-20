@@ -33,7 +33,7 @@ With `get_obs` you can extract data from the observations collected in the API. 
 | `year` | Year of observations | `year=2019` |
 
 For the `taxon` argument the possible values are: 
-`chromista`, `protozoa`, `animalia`, `mollusca`, `arachnida`, `insecta`, `aves`, `mammalia`, `amphibia`, `reptilia`, `actinopterygii`, `fungi`, `plantae` y `unknown`.
+`chromista`, `protozoa`, `animalia`, `mollusca`, `arachnida`, `insecta`, `aves`, `mammalia`, `amphibia`, `reptilia`, `actinopterygii`, `fungi`, `plantae`, `cnidaria`, `annelida`, `platyhelminthes`, `echinodermata`, `bryozoa`, `porifera`, `elasmobranchii`, `crustacea` y `ctenophora`.
 
 Example of use:
 
