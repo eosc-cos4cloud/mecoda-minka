@@ -107,14 +107,13 @@ def _build_url(
     will be made
     """
     # define base url
-    if id_obs is not None:
-        base_url = f"{API_URL}/observations/{id_obs}.json"
-    else:
-        # base_url = f"{API_URL}/observations.json"
-        base_url = f"{API_URL}:4000/v1/observations"
+
+    base_url = f"{API_URL}:4000/v1/observations"
 
     # define the arguments that the API supports
     args = []
+    if id_obs is not None:
+        args.append(f"id={id_obs}")
     if id_project is not None:
         args.append(f"project_id={id_project}")
     if user is not None:
