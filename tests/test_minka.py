@@ -124,7 +124,6 @@ def test_get_obs_by_id_returns_observations_data(
                 16,
                 10,
                 39,
-                tzinfo=TzInfo(7200),
             ),
             updated_at=datetime.datetime(
                 2016,
@@ -133,13 +132,13 @@ def test_get_obs_by_id_returns_observations_data(
                 10,
                 44,
                 44,
-                tzinfo=TzInfo(7200),
             ),
             observed_on=datetime.datetime(2016, 7, 6, 0, 0),
             description="",
             iconic_taxon="chromista",
             taxon_id=2850,
             taxon_name="Rissoella verruculosa",
+            taxon_rank="species",
             taxon_ancestry=None,
             location="41.773743,3.021853",
             # latitude="41.773743",
@@ -166,45 +165,53 @@ def test_get_obs_by_id_returns_observations_data(
         )
     ]
     requests_mock.get(
-        f"{API_URL}/observations/2084.json?&per_page=200",
+        f"{API_URL}:4000/v1/observations?id=2084&per_page=200",
         json={
-            "id": 2084,
-            "captive": "false",
-            "created_at": "2016-07-11T16:10:39+02:00",
-            "updated_at": "2016-07-28T10:44:44+02:00",
-            "observed_on": "2016-07-06",
-            "description": "",
-            "iconic_taxon_id": 16,
-            "taxon": {
-                "id": 2850,
-                "name": "Rissoella verruculosa",
-                "ancestry": None,
-            },
-            "latitude": "41.773743",
-            "longitude": "3.021853",
-            "quality_grade": "research",
-            "user_id": 626,
-            "user_login": "amxatrac",
-            "project_observations": [
-                {"project_id": 104, "id": 1079, "observation_id": 2084},
-                {"project_id": 121, "id": 1329, "observation_id": 2084},
-            ],
-            "photos": [
+            "total_results": 1,
+            "page": 1,
+            "per_page": 30,
+            "results": [
                 {
-                    "id": 1975,
-                    "large_url": f"{API_URL}/attachments/local_photos/files/2947/large/rissoella_verruculosa.JPG?1468246242",
-                    "medium_url": f"{API_URL}/attachments/local_photos/files/2947/medium/rissoella_verruculosa.JPG?1468246242",
-                    "small_url": f"{API_URL}/attachments/local_photos/files/2947/small/rissoella_verruculosa.JPG?1468246242",
-                },
-                {
-                    "id": 2075,
-                    "large_url": f"{API_URL}/attachments/local_photos/files/2947/large/rissoella_verruculosa.JPG?1468246242",
-                    "medium_url": f"{API_URL}/attachments/local_photos/files/2947/medium/rissoella_verruculosa.JPG?1468246242",
-                    "small_url": f"{API_URL}/attachments/local_photos/files/2947/small/rissoella_verruculosa.JPG?1468246242",
-                },
+                    "id": 2084,
+                    "captive": "false",
+                    "created_at": "2016-07-11T16:10:39",
+                    "updated_at": "2016-07-28T10:44:44",
+                    "observed_on": "2016-07-06",
+                    "description": "",
+                    "iconic_taxon_id": 16,
+                    "taxon": {
+                        "id": 2850,
+                        "name": "Rissoella verruculosa",
+                        "rank": "species",
+                        "ancestry": None,
+                    },
+                    "latitude": "41.773743",
+                    "longitude": "3.021853",
+                    "quality_grade": "research",
+                    "user_id": 626,
+                    "user_login": "amxatrac",
+                    "project_observations": [
+                        {"project_id": 104, "id": 1079, "observation_id": 2084},
+                        {"project_id": 121, "id": 1329, "observation_id": 2084},
+                    ],
+                    "photos": [
+                        {
+                            "id": 1975,
+                            "large_url": f"{API_URL}/attachments/local_photos/files/2947/large/rissoella_verruculosa.JPG?1468246242",
+                            "medium_url": f"{API_URL}/attachments/local_photos/files/2947/medium/rissoella_verruculosa.JPG?1468246242",
+                            "small_url": f"{API_URL}/attachments/local_photos/files/2947/small/rissoella_verruculosa.JPG?1468246242",
+                        },
+                        {
+                            "id": 2075,
+                            "large_url": f"{API_URL}/attachments/local_photos/files/2947/large/rissoella_verruculosa.JPG?1468246242",
+                            "medium_url": f"{API_URL}/attachments/local_photos/files/2947/medium/rissoella_verruculosa.JPG?1468246242",
+                            "small_url": f"{API_URL}/attachments/local_photos/files/2947/small/rissoella_verruculosa.JPG?1468246242",
+                        },
+                    ],
+                    "num_identification_agreements": 3,
+                    "num_identification_disagreements": 0,
+                }
             ],
-            "num_identification_agreements": 3,
-            "num_identification_disagreements": 0,
         },
     )
 
@@ -393,6 +400,7 @@ def test_get_obs_project_returns_observations_data(
             user_id=id_,
             iconic_taxon="amphibia",
             taxon_id=481,
+            taxon_rank="genus",
             taxon_name="Hedera",
             taxon_ancestry=None,
         )
@@ -407,7 +415,12 @@ def test_get_obs_project_returns_observations_data(
                     "id": 1,
                     "user_id": id_,
                     "iconic_taxon_id": 7,
-                    "taxon": {"id": 481, "name": "Hedera", "ancestry": None},
+                    "taxon": {
+                        "id": 481,
+                        "rank": "genus",
+                        "name": "Hedera",
+                        "ancestry": None,
+                    },
                 }
                 for id_ in range(37)
             ],
@@ -471,6 +484,7 @@ def test_get_obs_from_taxon_returns_info_with_pagination(
             iconic_taxon="fungi",
             id=313430,
             taxon_id=39432,
+            taxon_rank="species",
             taxon_name="Cheilymenia theleboloides",
             taxon_ancestry=None,
             updated_at=datetime.datetime(
@@ -495,6 +509,7 @@ def test_get_obs_from_taxon_returns_info_with_pagination(
                     "id": 313430,
                     "taxon": {
                         "id": 39432,
+                        "rank": "species",
                         "name": "Cheilymenia theleboloides",
                         "ancestry": None,
                     },
@@ -513,6 +528,7 @@ def test_get_obs_from_taxon_returns_info_with_pagination(
                     "id": 313430,
                     "taxon": {
                         "id": 39432,
+                        "rank": "species",
                         "name": "Cheilymenia theleboloides",
                         "ancestry": None,
                     },
@@ -531,6 +547,7 @@ def test_get_obs_from_taxon_returns_info_with_pagination(
                     "id": 313430,
                     "taxon": {
                         "id": 39432,
+                        "rank": "species",
                         "name": "Cheilymenia theleboloides",
                         "ancestry": None,
                     },
@@ -556,6 +573,7 @@ def test_get_obs_from_place_id_returns_obs(
             user_login="andrea",
             taxon_id=2948,
             taxon_name="Holothuria",
+            taxon_rank="genus",
             taxon_ancestry=None,
             created_at=datetime.datetime(
                 2021,
@@ -564,7 +582,6 @@ def test_get_obs_from_place_id_returns_obs(
                 19,
                 43,
                 43,
-                tzinfo=datetime.timezone(datetime.timedelta(seconds=7200)),
             ),
         )
         for i in range(456)
@@ -575,11 +592,16 @@ def test_get_obs_from_place_id_returns_obs(
         json={
             "results": [
                 {
-                    "taxon": {"id": 2948, "name": "Holothuria", "ancestry": None},
+                    "taxon": {
+                        "id": 2948,
+                        "name": "Holothuria",
+                        "rank": "genus",
+                        "ancestry": None,
+                    },
                     "id": 1645,
                     "iconic_taxon_id": 3,
                     "user_login": "andrea",
-                    "created_at": "2021-08-15T19:43:43+02:00",
+                    "created_at": "2021-08-15T19:43:43",
                 }
                 for id_ in range(200)
             ],
@@ -590,11 +612,16 @@ def test_get_obs_from_place_id_returns_obs(
         json={
             "results": [
                 {
-                    "taxon": {"id": 2948, "name": "Holothuria", "ancestry": None},
+                    "taxon": {
+                        "id": 2948,
+                        "name": "Holothuria",
+                        "rank": "genus",
+                        "ancestry": None,
+                    },
                     "id": 1645,
                     "iconic_taxon_id": 3,
                     "user_login": "andrea",
-                    "created_at": "2021-08-15T19:43:43+02:00",
+                    "created_at": "2021-08-15T19:43:43",
                 }
                 for id_ in range(200)
             ],
@@ -605,18 +632,23 @@ def test_get_obs_from_place_id_returns_obs(
         json={
             "results": [
                 {
-                    "taxon": {"id": 2948, "name": "Holothuria", "ancestry": None},
+                    "taxon": {
+                        "id": 2948,
+                        "name": "Holothuria",
+                        "rank": "genus",
+                        "ancestry": None,
+                    },
                     "id": 1645,
                     "iconic_taxon_id": 3,
                     "user_login": "andrea",
-                    "created_at": "2021-08-15T19:43:43+02:00",
+                    "created_at": "2021-08-15T19:43:43",
                 }
                 for id_ in range(56)
             ],
         },
     )
     result = get_obs(place_id=1011)
-
+    # __import__("pdb").set_trace()
     assert result == expected_result
     assert len(result) == 456
 
