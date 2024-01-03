@@ -1,5 +1,4 @@
 import os
-import shutil
 from contextlib import suppress
 from datetime import date
 from typing import Any, Dict, List, Optional, Union
@@ -181,8 +180,9 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
 
         with suppress(KeyError):
             try:
-                data["latitude"] = data["location"].split(",")[0]
-                data["longitude"] = data["location"].split(",")[1]
+                location = data["location"].split(",")
+                data["latitude"] = location[0]
+                data["longitude"] = location[1]
             except:
                 data["latitude"] = None
                 data["longitude"] = None
@@ -191,36 +191,36 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
             lista_fotos = []
             # Caso para las observaciones filtradas por id
             if len(observations_data) == 1:
-                for observation_photo in data["observation_photos"]:
-                    lista_fotos.append(
-                        Photo(
-                            id=observation_photo["photo"]["id"],
-                            large_url=observation_photo["photo"]["large_url"],
-                            medium_url=observation_photo["photo"]["medium_url"],
-                            small_url=observation_photo["photo"]["small_url"],
-                            license_photo=observation_photo["photo"]["license_code"],
-                            attribution=observation_photo["photo"]["attribution"],
-                        )
+                lista_fotos = [
+                    Photo(
+                        id=observation_photo["photo"]["id"],
+                        large_url=observation_photo["photo"]["large_url"],
+                        medium_url=observation_photo["photo"]["medium_url"],
+                        small_url=observation_photo["photo"]["small_url"],
+                        license_photo=observation_photo["photo"]["license_code"],
+                        attribution=observation_photo["photo"]["attribution"],
                     )
+                    for observation_photo in data["observation_photos"]
+                ]
             # Resto de búsquedas
             else:
-                for observation_photo in data["observation_photos"]:
-                    lista_fotos.append(
-                        Photo(
-                            id=observation_photo["photo"]["id"],
-                            large_url=observation_photo["photo"]["url"].replace(
-                                "/square", "/large"
-                            ),
-                            medium_url=observation_photo["photo"]["url"].replace(
-                                "/square", "/medium"
-                            ),
-                            small_url=observation_photo["photo"]["url"].replace(
-                                "/square", "/small"
-                            ),
-                            license_photo=observation_photo["photo"]["license_code"],
-                            attribution=observation_photo["photo"]["attribution"],
-                        )
+                lista_fotos = [
+                    Photo(
+                        id=observation_photo["photo"]["id"],
+                        large_url=observation_photo["photo"]["url"].replace(
+                            "/square", "/large"
+                        ),
+                        medium_url=observation_photo["photo"]["url"].replace(
+                            "/square", "/medium"
+                        ),
+                        small_url=observation_photo["photo"]["url"].replace(
+                            "/square", "/small"
+                        ),
+                        license_photo=observation_photo["photo"]["license_code"],
+                        attribution=observation_photo["photo"]["attribution"],
                     )
+                    for observation_photo in data["observation_photos"]
+                ]
             data["photos"] = lista_fotos
 
         with suppress(KeyError):
@@ -264,15 +264,19 @@ def _request(arg_url: str, num_max: Optional[int] = None) -> List[Observation]:
     """
     observations = []
     n = 1
-    page = requests.get(arg_url)
+    session = requests.Session()
+    page = session.get(arg_url)
 
     if page.status_code == 404:
         raise ValueError("Not found")
 
     elif page.status_code == 200:
         try:
-            while len(page.json()["results"]) == 200:
-                observations.extend(_build_observations(page.json()["results"]))
+            response = page.json()
+            if "results" not in response:
+                raise ValueError("Invalid response format: missing 'results' field")
+            while len(response["results"]) == 200:
+                observations.extend(_build_observations(response["results"]))
                 n += 1
                 if n > 49:
                     print("WARNING: Only the first 10,000 results are displayed")
@@ -280,16 +284,18 @@ def _request(arg_url: str, num_max: Optional[int] = None) -> List[Observation]:
                 if num_max is not None and len(observations) >= num_max:
                     break
                 url = f"{arg_url}&page={n}"
-                page = requests.get(url)
+                page = session.get(url)
+                response = page.json()
+                if "results" not in response:
+                    raise ValueError("Invalid response format: missing 'results' field")
                 print(f"Number of elements: {len(observations)}")
 
-            observations.extend(_build_observations(page.json()["results"]))
+            observations.extend(_build_observations(response["results"]))
             if num_max:
                 observations = observations[:num_max]
 
-        except:
-            # Caso de los requests con el id de una única observación, no tienen results
-            observations.extend(_build_observations([page.json()]))
+        except ValueError as e:
+            print(f"Error: {str(e)}")
 
         print(f"Number of elements: {len(observations)}")
 
@@ -357,12 +363,13 @@ def get_dfs(observations) -> pd.DataFrame:
     df_photos["path"] = (
         df_photos["id"].astype(str) + "_" + df_photos["photos_id"].astype(str) + ".jpg"
     )
-    # El campo queda en blanco en los C
-    df_photos.loc[
+    # El campo queda en blanco en los Copyright
+    df_photos["license_photo"] = np.where(
         (df_photos["license_photo"].isnull())
         & (df_photos["attribution"].str.contains("all rights reserved")),
-        "license_photo",
-    ] = "C"
+        "C",
+        df_photos["license_photo"],
+    )
 
     return df_observations, df_photos
 
@@ -387,8 +394,9 @@ def _get_dict_taxon(ancestry_string, df_taxon):
         for ancestry in list_ancestries:
             if int(ancestry) != 1:
                 try:
-                    rank = df_taxon[df_taxon["id"] == int(ancestry)]["rank"].item()
-                    name = df_taxon[df_taxon["id"] == int(ancestry)]["name"].item()
+                    taxon_row = df_taxon[df_taxon["id"] == int(ancestry)]
+                    rank = taxon_row["rank"].item()
+                    name = taxon_row["name"].item()
                     data[rank] = name
                 except:
                     # para rangos intermedios, no los incluye
@@ -409,7 +417,8 @@ def extra_info(df_observations) -> pd.DataFrame:
 
     for id_num in ids:
         url = f"{API_URL}/observations/{id_num}.json"
-        page = requests.get(url)
+        session = requests.Session()
+        page = session.get(url)
 
         idents = page.json()["identifications"]
         if len(idents) > 0:
@@ -420,13 +429,13 @@ def extra_info(df_observations) -> pd.DataFrame:
         else:
             dic[id_num] = [0, 0, 0]
 
-    df_observations["first_identification"] = df_observations["id"].apply(
+    df_observations["first_identification"] = df_observations["id"].map(
         lambda x: str(dic[x][0])
     )
-    df_observations["first_taxon_name"] = df_observations["id"].apply(
+    df_observations["first_taxon_name"] = df_observations["id"].map(
         lambda x: str(dic[x][1])
     )
-    df_observations["last_taxon_name"] = df_observations["id"].apply(
+    df_observations["last_taxon_name"] = df_observations["id"].map(
         lambda x: str(dic[x][2])
     )
 
@@ -451,16 +460,15 @@ def download_photos(
     Function to download the photos resulting from the query.
     """
     # Create the folder, if it exists overwrite it
-    if os.path.exists(directorio):
-        shutil.rmtree(directorio)
-    os.makedirs(directorio)
+    if not os.path.exists(directorio):
+        os.makedirs(directorio)
 
     # Iterate through the df_photos query result and download the photos in medium size
     for i, row in df_photos.iterrows():
         response = requests.get(row["photos_medium_url"], stream=True)
         if response.status_code == 200:
             with open(f"{directorio}/{row['path']}", "wb") as out_file:
-                shutil.copyfileobj(response.raw, out_file)
+                out_file.write(response.content)
         del response
 
     # Even using .loc, we get a SettingWithCopyWarning message
