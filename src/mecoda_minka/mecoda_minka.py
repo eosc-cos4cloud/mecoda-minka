@@ -115,7 +115,10 @@ def _build_url(
     if id_obs is not None:
         args.append(f"id={id_obs}")
     if id_project is not None:
-        args.append(f"project_id={id_project}")
+        if introduced is True:
+            args.append(f"introduced=true&project_id={id_project}")
+        else:
+            args.append(f"project_id={id_project}")
     if user is not None:
         args.append(f"user_login={user}")
     if created_on is not None:
