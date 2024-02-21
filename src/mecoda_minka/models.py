@@ -88,6 +88,7 @@ class Observation(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     observed_on: Optional[date] = None
+    time_observed_at: Optional[datetime] = None
     description: Optional[str] = None
     iconic_taxon: Optional[str] = None
     taxon_id: Optional[int] = None

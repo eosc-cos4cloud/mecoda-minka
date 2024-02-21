@@ -321,6 +321,34 @@ def get_dfs(observations) -> pd.DataFrame:
     df_observations["observed_on"] = pd.to_datetime(
         df_observations["observed_on"], format="%Y-%m-%d %H:%M:%S", utc=True
     ).dt.date
+    df_observations["observed_on_time"] = pd.to_datetime(
+        df_observations["time_observed_at"], format="%Y-%m-%d %H:%M:%S", utc=True
+    ).dt.time
+    df_observations.drop(columns=["time_observed_at"], inplace=True)
+
+    df_observations = df_observations[
+        [
+            "id",
+            "created_at",
+            "updated_at",
+            "observed_on",
+            "observed_on_time",
+            "iconic_taxon",
+            "taxon_id",
+            "taxon_rank",
+            "taxon_name",
+            "latitude",
+            "longitude",
+            "place_name",
+            "quality_grade",
+            "user_id",
+            "user_login",
+            "license_obs",
+            "num_identification_agreements",
+            "num_identification_disagreements",
+            "taxon_ancestry",
+        ]
+    ]
 
     # Las observaciones con licencia None son Copyright
     df_observations.loc[df_observations.license_obs.isnull(), "license_obs"] = "C"
