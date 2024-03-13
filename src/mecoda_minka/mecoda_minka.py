@@ -14,14 +14,15 @@ from .models import ICONIC_TAXON, TAXONS, Observation, Photo, Project
 urllib3.disable_warnings()
 
 # Variables
-API_URL = "https://minka-sdg.org"
+BASE_URL = "https://minka-sdg.org"
+API_PATH = "https://api.minka-sdg.org/v1"
 
 
 def get_project(project: Union[str, int]) -> List[Project]:
     """Download information of a project from id or name"""
 
     if type(project) is int:
-        url = f"{API_URL}/projects/{project}.json"
+        url = f"{BASE_URL}/projects/{project}.json"
         page = requests.get(url)
 
         if page.status_code == 404:
@@ -32,7 +33,7 @@ def get_project(project: Union[str, int]) -> List[Project]:
             return resultado
 
     elif type(project) is str:
-        url = f"{API_URL}/projects/search.json?q={project}"
+        url = f"{BASE_URL}/projects/search.json?q={project}"
         page = requests.get(url)
         resultado = [Project(**proj) for proj in page.json()]
         return resultado
@@ -108,7 +109,7 @@ def _build_url(
     """
     # define base url
 
-    base_url = f"{API_URL}:4000/v1/observations"
+    base_url = f"{API_PATH}/observations"
 
     # define the arguments that the API supports
     args = []
@@ -446,7 +447,7 @@ def extra_info(df_observations) -> pd.DataFrame:
     dic = {}
 
     for id_num in ids:
-        url = f"{API_URL}/observations/{id_num}.json"
+        url = f"{BASE_URL}/observations/{id_num}.json"
         session = requests.Session()
         page = session.get(url)
 
@@ -509,7 +510,7 @@ def get_count_by_taxon() -> Dict:
     """
     Function that returns the number of observations recorded for each taxonomic family.
     """
-    url = f"{API_URL}/taxa.json"
+    url = f"{BASE_URL}/taxa.json"
     page = requests.get(url)
     taxa = page.json()
     count = {}
@@ -596,7 +597,7 @@ def _build_url_dwc(
     will be made
     """
     # define base url
-    base_url = f"{API_URL}/observations.dwc"
+    base_url_dwc = f"{BASE_URL}/observations.dwc"
 
     # define the arguments that the API supports
     args = []
@@ -618,7 +619,7 @@ def _build_url_dwc(
     if ends_on is not None:
         args.append(f"d2={ends_on}")
 
-    url = f'{base_url}?{"&".join(args)}&per_page=200'
+    url = f'{base_url_dwc}?{"&".join(args)}&per_page=200'
 
     # if no parameter indicated, it returns the last records
 

@@ -21,7 +21,8 @@ from mecoda_minka import (
     get_project,
 )
 
-API_URL = "https://minka-sdg.org"
+BASE_URL = "https://minka-sdg.org"
+API_URL = "https://api.minka-sdg.org/v1"
 
 
 def test_get_project_from_id_extract_project_data():
@@ -53,7 +54,9 @@ def test_get_project_from_id_extract_project_data():
 
 def test_get_project_from_not_found_id_raise_error(requests_mock, capsys):
     requests_mock.get(
-        f"{API_URL}/projects/11.json", json={"error": "No encontrado"}, status_code=404
+        f"{BASE_URL}/projects/11.json",
+        json={"error": "No encontrado"},
+        status_code=404,
     )
     get_project(11)
     out, err = capsys.readouterr()
@@ -67,7 +70,7 @@ def test_get_project_from_str_extract_project_data(requests_mock):
         )
     ]
     requests_mock.get(
-        f"{API_URL}/projects/search.json?q=urbamar",
+        f"{BASE_URL}/projects/search.json?q=urbamar",
         json=[
             {
                 "id": 806,
@@ -91,7 +94,7 @@ def test_get_project_from_ambiguous_str_extract_project_data(requests_mock):
         ),
     ]
     requests_mock.get(
-        f"{API_URL}/projects/search.json?q=mar",
+        f"{BASE_URL}/projects/search.json?q=mar",
         json=[
             {
                 "id": 806,
@@ -165,7 +168,7 @@ def test_get_obs_by_id_returns_observations_data(
         )
     ]
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?id=2084&per_page=200",
+        f"{API_URL}/observations?id=2084&per_page=200",
         json={
             "total_results": 1,
             "page": 1,
@@ -232,7 +235,7 @@ def test_get_obs_from_query_returns_observations_data_when_less_than_pagination(
         for id in range(3)
     ]
     requests_mock.get(
-        "https://minka-sdg.org:4000/v1/observations?q=%22quercus%20quercus%22&per_page=200",
+        f"{API_URL}/observations?q=%22quercus%20quercus%22&per_page=200",
         json={
             "total_results": 147,
             "page": 1,
@@ -247,15 +250,6 @@ def test_get_obs_from_query_returns_observations_data_when_less_than_pagination(
             ],
         },
     )
-    """requests_mock.get(
-        f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200',
-        json=[{
-                "id": id, 
-                "iconic_taxon_id": 2,
-                "created_at": "2021-03-15T16:10:39+02:00"
-            } for id in range(3)
-        ],
-    )"""
 
     result = get_obs(query="quercus quercus")
 
@@ -276,7 +270,7 @@ def test_get_obs_returns_observations_data_when_more_than_pagination(
     ]
 
     requests_mock.get(
-        f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200',
+        f'{API_URL}/observations?q="quercus quercus"&per_page=200',
         json={
             "total_results": 200,
             "page": 1,
@@ -292,7 +286,7 @@ def test_get_obs_returns_observations_data_when_more_than_pagination(
         },
     )
     requests_mock.get(
-        f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200&page=2',
+        f'{API_URL}/observations?q="quercus quercus"&per_page=200&page=2',
         json={
             "results": [
                 {
@@ -305,7 +299,7 @@ def test_get_obs_returns_observations_data_when_more_than_pagination(
         },
     )
     requests_mock.get(
-        f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200&page=100',
+        f'{API_URL}/observations?q="quercus quercus"&per_page=200&page=100',
         json=[],
     )
 
@@ -321,14 +315,14 @@ def test_get_obs_returns_error_when_more_than_10000_results(
 ) -> None:
     """The API will return an error."""
     requests_mock.get(
-        f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200',
+        f'{API_URL}/observations?q="quercus quercus"&per_page=200',
         json={
             "results": [{"id": id_, "iconic_taxon_id": 3} for id_ in range(0, 200)],
         },
     )
     for page in range(2, 100):
         requests_mock.get(
-            f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200&page={page}',
+            f'{API_URL}/observations?q="quercus quercus"&per_page=200&page={page}',
             json={
                 "results": [
                     {"id": id_, "iconic_taxon_id": 3}
@@ -337,7 +331,7 @@ def test_get_obs_returns_error_when_more_than_10000_results(
             },
         )
     requests_mock.get(
-        f'{API_URL}:4000/v1/observations?q="quercus quercus"&per_page=200&page=101',
+        f'{API_URL}/observations?q="quercus quercus"&per_page=200&page=101',
         json={"message": "You reach 10,000 items limit"},
     )
 
@@ -361,7 +355,7 @@ def test_get_obs_from_user_returns_observations_data(
         for id_ in range(260)
     ]
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?user_login=zolople&per_page=200",
+        f"{API_URL}/observations?user_login=zolople&per_page=200",
         json={
             "results": [
                 {
@@ -373,7 +367,7 @@ def test_get_obs_from_user_returns_observations_data(
         },
     )
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?user_login=zolople&per_page=200&page=2",
+        f"{API_URL}/observations?user_login=zolople&per_page=200&page=2",
         json={
             "results": [
                 {
@@ -408,7 +402,7 @@ def test_get_obs_project_returns_observations_data(
     ]
 
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?project_id=20&per_page=200",
+        f"{API_URL}/observations?project_id=20&per_page=200",
         json={
             "results": [
                 {
@@ -451,13 +445,13 @@ def test_get_project_from_name_returns_observations_data(
             ),
             description="Urbamar és un projecte de ciència ciutadana.",
             title="URBAMAR",
-            icon_url=f"{API_URL}/attachments/projects/icons/1191/span2/Ilustracio%CC%81n-sin-ti%CC%81tulo.png?1595350663",
+            icon_url=f"{BASE_URL}/attachments/projects/icons/1191/span2/Ilustracio%CC%81n-sin-ti%CC%81tulo.png?1595350663",
             observed_taxa_count=0,
         )
     ]
 
     requests_mock.get(
-        f"{API_URL}/projects/search.json?q=urbamar",
+        f"{BASE_URL}/projects/search.json?q=urbamar",
         json=[
             {
                 "id": 1191,
@@ -466,7 +460,7 @@ def test_get_project_from_name_returns_observations_data(
                 "updated_at": "2020-09-26T17:07:36+02:00",
                 "title": "URBAMAR",
                 "description": "Urbamar és un projecte de ciència ciutadana.",
-                "icon_url": f"{API_URL}/attachments/projects/icons/1191/span2/Ilustracio%CC%81n-sin-ti%CC%81tulo.png?1595350663",
+                "icon_url": f"{BASE_URL}/attachments/projects/icons/1191/span2/Ilustracio%CC%81n-sin-ti%CC%81tulo.png?1595350663",
                 "observed_taxa_count": 0,
             }
         ],
@@ -501,7 +495,7 @@ def test_get_obs_from_taxon_returns_info_with_pagination(
     ]
 
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?iconic_taxa=Fungi&per_page=200",
+        f"{API_URL}/observations?iconic_taxa=Fungi&per_page=200",
         json={
             "results": [
                 {
@@ -520,7 +514,7 @@ def test_get_obs_from_taxon_returns_info_with_pagination(
         },
     )
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?iconic_taxa=Fungi&per_page=200&page=2",
+        f"{API_URL}/observations?iconic_taxa=Fungi&per_page=200&page=2",
         json={
             "results": [
                 {
@@ -539,7 +533,7 @@ def test_get_obs_from_taxon_returns_info_with_pagination(
         },
     )
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?iconic_taxa=Fungi&per_page=200&page=3",
+        f"{API_URL}/observations?iconic_taxa=Fungi&per_page=200&page=3",
         json={
             "results": [
                 {
@@ -588,7 +582,7 @@ def test_get_obs_from_place_id_returns_obs(
     ]
 
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?place_id=1011&per_page=200",
+        f"{API_URL}/observations?place_id=1011&per_page=200",
         json={
             "results": [
                 {
@@ -608,7 +602,7 @@ def test_get_obs_from_place_id_returns_obs(
         },
     )
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?place_id=1011&per_page=200&page=2",
+        f"{API_URL}/observations?place_id=1011&per_page=200&page=2",
         json={
             "results": [
                 {
@@ -628,7 +622,7 @@ def test_get_obs_from_place_id_returns_obs(
         },
     )
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?place_id=1011&per_page=200&page=3",
+        f"{API_URL}/observations?place_id=1011&per_page=200&page=3",
         json={
             "results": [
                 {
@@ -658,7 +652,7 @@ def test_get_obs_from_taxon_min_returns_info(
     requests_mock,
 ) -> None:
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?iconic_taxa=Fungi&per_page=200",
+        f"{API_URL}/observations?iconic_taxa=Fungi&per_page=200",
         json={
             "results": [
                 {
@@ -680,7 +674,7 @@ def test_get_obs_from_combined_arguments(
     requests_mock,
 ) -> None:
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?user_login=zolople&iconic_taxa=Mollusca&per_page=200",
+        f"{API_URL}/observations?user_login=zolople&iconic_taxa=Mollusca&per_page=200",
         json={
             "results": [
                 {
@@ -700,7 +694,7 @@ def test_get_obs_from_three_combined_arguments(
     requests_mock,
 ) -> None:
     requests_mock.get(
-        f'{API_URL}:4000/v1/observations?project_id=45&place_id=3&q="quercus quercus"&per_page=200',
+        f'{API_URL}/observations?project_id=45&place_id=3&q="quercus quercus"&per_page=200',
         json={
             "results": [
                 {"id": 4586, "project": 45, "place": 3, "species": "quercus quercus"},
@@ -722,7 +716,7 @@ def test_get_count_by_taxon_returns_info(
     requests_mock,
 ) -> None:
     requests_mock.get(
-        f"{API_URL}/taxa.json",
+        f"{BASE_URL}/taxa.json",
         json=[
             {
                 "name": "Fungi",
@@ -758,7 +752,7 @@ def test_get_obs_from_year_returns_obs(
         for id_ in range(150)
     ]
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?year=2018&per_page=200",
+        f"{API_URL}/observations?year=2018&per_page=200",
         json={
             "results": [
                 {
@@ -784,7 +778,7 @@ def test_get_obs_with_num_max(
         for id_ in range(10)
     ]
     requests_mock.get(
-        f"{API_URL}:4000/v1/observations?iconic_taxa=Fungi&per_page=200",
+        f"{API_URL}/observations?iconic_taxa=Fungi&per_page=200",
         json={
             "results": [
                 {
@@ -826,9 +820,9 @@ def test_get_dfs_extrae_dfs() -> None:
             photos=[
                 Photo(
                     id=119257,
-                    large_url="https://minka-sdg.org/attachments/local_photos/files/119257/large/D72_7339.jpeg?1666884089",
-                    medium_url="https://minka-sdg.org/attachments/local_photos/files/119257/medium/D72_7339.jpeg?1666884089",
-                    small_url="https://minka-sdg.org/attachments/local_photos/files/119257/small/D72_7339.jpeg?1666884089",
+                    large_url=f"{BASE_URL}/attachments/local_photos/files/119257/large/D72_7339.jpeg?1666884089",
+                    medium_url=f"{BASE_URL}/attachments/local_photos/files/119257/medium/D72_7339.jpeg?1666884089",
+                    small_url=f"{BASE_URL}/attachments/local_photos/files/119257/small/D72_7339.jpeg?1666884089",
                 )
             ],
             num_identification_agreements=0,
@@ -896,9 +890,9 @@ def test_get_taxon_columns() -> None:
             photos=[
                 Photo(
                     id=119257,
-                    large_url="https://minka-sdg.org/attachments/local_photos/files/119257/large/D72_7339.jpeg?1666884089",
-                    medium_url="https://minka-sdg.org/attachments/local_photos/files/119257/medium/D72_7339.jpeg?1666884089",
-                    small_url="https://minka-sdg.org/attachments/local_photos/files/119257/small/D72_7339.jpeg?1666884089",
+                    large_url=f"{BASE_URL}/attachments/local_photos/files/119257/large/D72_7339.jpeg?1666884089",
+                    medium_url=f"{BASE_URL}/attachments/local_photos/files/119257/medium/D72_7339.jpeg?1666884089",
+                    small_url=f"{BASE_URL}/attachments/local_photos/files/119257/small/D72_7339.jpeg?1666884089",
                 )
             ],
             num_identification_agreements=0,
