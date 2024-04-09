@@ -23,14 +23,22 @@ With `get_obs` you can extract data from the observations collected in the API. 
 | Argument | Descrition | Example |
 | --------- | ----------- | ------- |
 | `query` | Word or phrase found in the data of an observation | `query="quercus quercus"` |
-| `project_name` | Name of a project | `project_name="urbamar"` |
 | `id_project` | Identification number of a project | `id_project=806` |
 | `id_obs` | Identification number of a specific observation | `id_obs=425` |
 | `user` | Name of user who has uploaded the observations | `user="zolople"` |
-| `taxon` | One of the main taxonomies | `taxon="fungi"` |
+| `taxon` | One of the main taxonomies, also called 'iconic taxon' | `taxon="fungi"` |
+| `taxon_id` | Identificatin number of a taxonomy | `taxon_id=244601` |
 | `place_id` | Identification number of a place | `place_id=1011` |
-| `place_name` | Name of a place | `place_name="Barcelona"` |
 | `year` | Year of observations | `year=2019` |
+| `num_max` | Max number of results to retrieve | `num_max=1000` |
+| `starts_on` | Must be observed on or after this date | `starts_on='2021-04-28'` |
+| `ends_on` | Must be observed on or before this date | `starts_on='2023-12-31'` |
+| `created_on` | Date when observation was uploaded to the platform YYYY-MM-DD | `created_on='2022-01-01'` |
+| `created_d1` | Must be created on or after this date | `created_d1='2022-01-01'` |
+| `created_d2` | Must be created on or before this date | `created_d2='2022-01-01'` |
+| `grade` | Must be one of this: research, casual, needs_id | `grade='research'` |
+| `id_above` | Id observation must be above this number. It helps to split big queries | `id_above=10000` |
+| `id_below` | Id observation must be below this number. It helps to split big queries | `id_below=20000` |
 
 For the `taxon` argument the possible values are: 
 `chromista`, `protozoa`, `animalia`, `mollusca`, `arachnida`, `insecta`, `aves`, `mammalia`, `amphibia`, `reptilia`, `actinopterygii`, `fungi`, `plantae`, `cnidaria`, `annelida`, `platyhelminthes`, `echinodermata`, `bryozoa`, `porifera`, `elasmobranchii`, `crustacea` y `ctenophora`.
@@ -86,24 +94,30 @@ The object `Observation` contains the information of each of the observations re
 | Attribute | Type | Description | Default value |
 | -------- | ---- | ----------- | ----------------- |
 | `id` | `int` | Observation number |  |
-| `captive` | `Optional[bool]` | State of captivity | `None` |
 | `created_at` | `Optional[datetime]` | Creation date | `None` |
 | `updated_at` | `Optional[datetime]` | Update date | `None` |
-| `observed_on` | `Optional[date]` | Observation date | `None` |
-| `description` | `Optional[str]` | Observation description | `None` |
+| `observed_on` | `Optional[str]` | Observation date | `None` |
+| `observed_on_time` | `Optional[str]` | Observation time | `None` |
 | `iconic_taxon` | `Optional[IconicTaxon]` | Taxonomic family | `None` |
 | `taxon_id` | `Optional[int]` | Identification number of the specific taxonomy | `None` |
+| `taxon_rank` | `Optional[str]` | Rank of the taxonomy observed | `None` |
 | `taxon_name` | `Optional[str]` | Name of the species observed | `None` |
-| `taxon_ancestry` | `Optional[str]` | String of the taxonomic sequence to which the observation corresponds, with identifiers separated by `/` | `None` |
 | `latitude` | `Optional[float]` | Latitude | `None` |
 | `longitude` | `Optional[float]` | Longitude | `None` |
 | `place_name` | `Optional[str]` | Observation site name | `None` |
 | `quality_grade` | `Optional[QualityGrade]` | Quality grade: `research`, `casual` o `needs_id` |`None` |
 | `user_id` | `Optional[int]` | User identification number | `None` |
+| `license_obs` | `Optional[str]` | Observation is under this license | `None` |
 | `user_login` | `Optional[str]` | User registration name | `None` |
 | `photos` | `List[Photo]` | Object lists [`Photo`](#photo), that include information about each photograph of the observation | `[]` |
 | `num_identification_agreements` | `Optional[int]` | Number of votes in favor of identification | `None` |
 | `num_identification_disagreements` | `Optional[int]` | Number of unfavorable votes to identification | `None` |
+| `kingdom` | `Optional[str]` | Kingdom to which the observation belongs  | `None` |
+| `phylum` | `Optional[str]` | Phylum to which the observation belongs  | `None` |
+| `class` | `Optional[str]` | Class to which the observation belongs  | `None` |
+| `order` | `Optional[str]` | Order to which the observation belongs  | `None` |
+| `family` | `Optional[str]` | Family to which the observation belongs  | `None` |
+| `genus` | `Optional[str]` | Genus to which the observation belongs  | `None` |
 
 
 ## Project
