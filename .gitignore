@@ -9,3 +9,4 @@ dist/
 *egg-info*
 tests/__init__.pyc
 .vscode/
+.envs

@@ -97,6 +97,7 @@ class Observation(BaseModel):
     taxon_ancestry: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    obscured: Optional[bool] = None
     place_name: Optional[str] = None
     quality_grade: Optional[str] = None
     user_id: Optional[int] = None

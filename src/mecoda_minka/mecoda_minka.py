@@ -340,6 +340,7 @@ def get_dfs(observations) -> pd.DataFrame:
             "taxon_name",
             "latitude",
             "longitude",
+            "obscured",
             "place_name",
             "quality_grade",
             "user_id",
