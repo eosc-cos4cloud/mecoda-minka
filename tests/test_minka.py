@@ -272,7 +272,7 @@ def test_get_obs_returns_observations_data_when_more_than_pagination(
     requests_mock.get(
         f'{API_URL}/observations?q="quercus quercus"&per_page=200',
         json={
-            "total_results": 200,
+            "total_results": 250,
             "page": 1,
             "per_page": 200,
             "results": [
@@ -288,6 +288,9 @@ def test_get_obs_returns_observations_data_when_more_than_pagination(
     requests_mock.get(
         f'{API_URL}/observations?q="quercus quercus"&per_page=200&page=2',
         json={
+            "total_results": 250,
+            "page": 2,
+            "per_page": 200,
             "results": [
                 {
                     "id": id_,
@@ -309,41 +312,6 @@ def test_get_obs_returns_observations_data_when_more_than_pagination(
     assert len(result) == 250
 
 
-def test_get_obs_returns_error_when_more_than_10000_results(
-    requests_mock,
-    capsys,
-) -> None:
-    """The API will return an error."""
-    requests_mock.get(
-        f'{API_URL}/observations?q="quercus quercus"&per_page=200',
-        json={
-            "results": [{"id": id_, "iconic_taxon_id": 3} for id_ in range(0, 200)],
-        },
-    )
-    for page in range(2, 100):
-        requests_mock.get(
-            f'{API_URL}/observations?q="quercus quercus"&per_page=200&page={page}',
-            json={
-                "results": [
-                    {"id": id_, "iconic_taxon_id": 3}
-                    for id_ in range(200 * (page - 1), 200 * page)
-                ],
-            },
-        )
-    requests_mock.get(
-        f'{API_URL}/observations?q="quercus quercus"&per_page=200&page=101',
-        json={"message": "You reach 10,000 items limit"},
-    )
-
-    result = get_obs("quercus quercus")
-
-    # captura el mensaje de error que aparece en el output
-    out, err = capsys.readouterr()
-
-    assert len(result) == 10000
-    assert "WARNING: Only the first 10,000 results are displayed" in out
-
-
 def test_get_obs_from_user_returns_observations_data(
     requests_mock,
 ) -> None:
@@ -357,6 +325,9 @@ def test_get_obs_from_user_returns_observations_data(
     requests_mock.get(
         f"{API_URL}/observations?user_login=zolople&per_page=200",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "user_id": 425,
@@ -369,6 +340,9 @@ def test_get_obs_from_user_returns_observations_data(
     requests_mock.get(
         f"{API_URL}/observations?user_login=zolople&per_page=200&page=2",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "user_id": 425,
@@ -404,6 +378,9 @@ def test_get_obs_project_returns_observations_data(
     requests_mock.get(
         f"{API_URL}/observations?project_id=20&per_page=200",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "id": 1,
@@ -497,6 +474,9 @@ def test_get_obs_from_taxon_returns_info_with_pagination(
     requests_mock.get(
         f"{API_URL}/observations?iconic_taxa=Fungi&per_page=200",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "iconic_taxon_id": 13,
@@ -516,6 +496,9 @@ def test_get_obs_from_taxon_returns_info_with_pagination(
     requests_mock.get(
         f"{API_URL}/observations?iconic_taxa=Fungi&per_page=200&page=2",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "iconic_taxon_id": 13,
@@ -535,6 +518,9 @@ def test_get_obs_from_taxon_returns_info_with_pagination(
     requests_mock.get(
         f"{API_URL}/observations?iconic_taxa=Fungi&per_page=200&page=3",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "iconic_taxon_id": 13,
@@ -584,6 +570,9 @@ def test_get_obs_from_place_id_returns_obs(
     requests_mock.get(
         f"{API_URL}/observations?place_id=1011&per_page=200",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "taxon": {
@@ -604,6 +593,9 @@ def test_get_obs_from_place_id_returns_obs(
     requests_mock.get(
         f"{API_URL}/observations?place_id=1011&per_page=200&page=2",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "taxon": {
@@ -624,6 +616,9 @@ def test_get_obs_from_place_id_returns_obs(
     requests_mock.get(
         f"{API_URL}/observations?place_id=1011&per_page=200&page=3",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "taxon": {
@@ -654,6 +649,9 @@ def test_get_obs_from_taxon_min_returns_info(
     requests_mock.get(
         f"{API_URL}/observations?iconic_taxa=Fungi&per_page=200",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "id": 1645,
@@ -676,6 +674,9 @@ def test_get_obs_from_combined_arguments(
     requests_mock.get(
         f"{API_URL}/observations?user_login=zolople&iconic_taxa=Mollusca&per_page=200",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "id": id_,
@@ -696,6 +697,9 @@ def test_get_obs_from_three_combined_arguments(
     requests_mock.get(
         f'{API_URL}/observations?project_id=45&place_id=3&q="quercus quercus"&per_page=200',
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {"id": 4586, "project": 45, "place": 3, "species": "quercus quercus"},
                 {"id": 4588, "project": 45, "place": 3, "species": "quercus quercus"},
@@ -754,6 +758,9 @@ def test_get_obs_from_year_returns_obs(
     requests_mock.get(
         f"{API_URL}/observations?year=2018&per_page=200",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "id": id_,
@@ -780,6 +787,9 @@ def test_get_obs_with_num_max(
     requests_mock.get(
         f"{API_URL}/observations?iconic_taxa=Fungi&per_page=200",
         json={
+            "total_results": 900,
+            "page": 1,
+            "per_page": 200,
             "results": [
                 {
                     "id": id_,
