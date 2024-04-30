@@ -84,8 +84,25 @@ def get_obs(
         id_above,
         id_below,
     )
-
-    observations = _request(url, num_max)
+    session = requests.Session()
+    total_obs = session.get(url).json()["total_results"]
+    print("Total observations to download:", total_obs)
+    if total_obs <= 10000:
+        observations = _request(url, num_max)
+    else:
+        observations = []
+        # download obs using bins of 10000 ids
+        for n in range(1, 31):
+            batch_url = f"{url}&id_above={(n-1)*10000}&id_below={(n*10000)+1}"
+            print(batch_url)
+            obs_batch = _request(batch_url, num_max)
+            if len(obs_batch) > 0:
+                observations.extend(obs_batch)
+                # stop when num_max is exceeded
+                if num_max is not None:
+                    if len(observations) > num_max:
+                        observations = observations[:num_max]
+                        break
 
     return observations
 
