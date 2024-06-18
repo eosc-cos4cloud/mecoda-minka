@@ -1,11 +1,11 @@
+import importlib.resources as resources
 import os
 from contextlib import suppress
 from datetime import date
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
-import pandas as pd
-import pkg_resources
+import pandas as pd  # type: ignore
 import requests
 import urllib3
 
@@ -433,7 +433,7 @@ def get_dfs(observations) -> pd.DataFrame:
 
 
 def _get_taxon_columns(df_obs: pd.DataFrame):
-    file_path = pkg_resources.resource_filename("mecoda_minka", "data/taxon_tree.csv")
+    file_path = resources.files("mecoda_minka.data") / "taxon_tree.csv"
     df_taxon = pd.read_csv(file_path)
     df_obs["taxon_ancestry"] = df_obs["taxon_ancestry"].apply(
         lambda x: _get_dict_taxon(x, df_taxon)
