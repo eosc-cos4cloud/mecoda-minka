@@ -372,6 +372,7 @@ def get_dfs(observations) -> pd.DataFrame:
             "user_id",
             "user_login",
             "license_obs",
+            "identifications_count",
             "num_identification_agreements",
             "num_identification_disagreements",
             "taxon_ancestry",

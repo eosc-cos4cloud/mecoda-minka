@@ -104,6 +104,6 @@ class Observation(BaseModel):
     user_login: Optional[str] = None
     license_obs: Optional[str] = None
     photos: List[Photo] = []
+    identifications_count: Optional[int] = None
     num_identification_agreements: Optional[int] = None
     num_identification_disagreements: Optional[int] = None
-    identifications_count: Optional[int] = None

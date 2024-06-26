@@ -38,5 +38,5 @@ setup(
         "Topic :: Utilities",
         "Natural Language :: English",
     ],
-    install_requires=["pydantic", "requests", "pandas", "folium"],
+    install_requires=["pydantic", "requests", "pandas"],
 )

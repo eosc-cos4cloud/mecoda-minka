@@ -944,3 +944,49 @@ def test_get_dwc_from_query() -> None:
     assert type(result) == pd.DataFrame
     assert len(result.columns) >= 33
     assert result["institutionCode"].iloc[0] == "Minka"
+
+
+# correctly converts observations to DataFrame
+def test_correctly_converts_observations_to_dataframe():
+    observations = [
+        Observation(
+            id=98441,
+            captive=False,
+            created_at=datetime.datetime(
+                2022, 10, 27, 15, 21, 52, 503000, tzinfo=datetime.timezone.utc
+            ),
+            updated_at=datetime.datetime(
+                2022, 10, 28, 8, 37, 38, 904000, tzinfo=datetime.timezone.utc
+            ),
+            observed_on=datetime.date(2020, 12, 24),
+            description=None,
+            iconic_taxon="animalia",
+            taxon_id=372,
+            taxon_name="Amphipoda",
+            taxon_ancestry="1/2/10/118",
+            latitude=42.0138450901,
+            longitude=3.2169726918,
+            place_name="Spain",
+            quality_grade="needs_id",
+            user_id=4,
+            user_login="xasalva",
+            photos=[
+                Photo(
+                    id=119257,
+                    large_url=f"{BASE_URL}/attachments/local_photos/files/119257/large/D72_7339.jpeg?1666884089",
+                    medium_url=f"{BASE_URL}/attachments/local_photos/files/119257/medium/D72_7339.jpeg?1666884089",
+                    small_url=f"{BASE_URL}/attachments/local_photos/files/119257/small/D72_7339.jpeg?1666884089",
+                )
+            ],
+            num_identification_agreements=0,
+            num_identification_disagreements=0,
+            identifications_count=2,
+            id_please=False,
+        )
+    ]
+
+    result_obs, result_photo = get_dfs(observations)
+
+    assert type(result_obs) == pd.DataFrame
+    assert len(result_obs) == len(observations)
+    assert "id" in result_obs.columns
