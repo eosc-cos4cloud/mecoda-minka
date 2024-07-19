@@ -287,7 +287,7 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
                     identification["user"]["login"]
                     for identification in identifications
                 ]
-                data["identificators"] = lista_identificators
+                data["identificators"] = ", ".join(lista_identificators)
             else:
                 data["identificators"] = None
 
