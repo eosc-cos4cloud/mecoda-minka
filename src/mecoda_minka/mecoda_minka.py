@@ -92,7 +92,7 @@ def get_obs(
     else:
         observations = []
         # download obs using bins of 10000 ids
-        for n in range(1, 31):
+        for n in range(1, 34):
             batch_url = f"{url}&id_above={(n-1)*10000}&id_below={(n*10000)+1}"
             print(batch_url)
             obs_batch = _request(batch_url, num_max)
