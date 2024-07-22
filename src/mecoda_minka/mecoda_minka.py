@@ -279,17 +279,17 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
             if data["description"] is not None:
                 data["description"] = data["description"].replace("\r\n", " ")
 
-        # list of identificators
+        # list of identifiers
         with suppress(KeyError):
             identifications = data["identifications"]
             if len(identifications) > 0:
-                lista_identificators = [
+                lista_identifiers = [
                     identification["user"]["login"]
                     for identification in identifications
                 ]
-                data["identificators"] = ", ".join(lista_identificators)
+                data["identifiers"] = ", ".join(lista_identifiers)
             else:
-                data["identificators"] = None
+                data["identifiers"] = None
 
         observation = Observation(**data)
 
@@ -385,7 +385,7 @@ def get_dfs(observations) -> pd.DataFrame:
             "user_login",
             "license_obs",
             "identifications_count",
-            "identificators",
+            "identifiers",
             "num_identification_agreements",
             "num_identification_disagreements",
             "taxon_ancestry",
