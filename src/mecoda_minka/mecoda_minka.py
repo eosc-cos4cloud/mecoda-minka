@@ -223,9 +223,15 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
                 lista_fotos = [
                     Photo(
                         id=observation_photo["photo"]["id"],
-                        large_url=observation_photo["photo"]["large_url"],
-                        medium_url=observation_photo["photo"]["medium_url"],
-                        small_url=observation_photo["photo"]["small_url"],
+                        large_url=observation_photo["photo"]["url"].replace(
+                            "/square", "/large"
+                        ),
+                        medium_url=observation_photo["photo"]["url"].replace(
+                            "/square", "/medium"
+                        ),
+                        small_url=observation_photo["photo"]["url"].replace(
+                            "/square", "/small"
+                        ),
                         license_photo=observation_photo["photo"]["license_code"],
                         attribution=observation_photo["photo"]["attribution"],
                     )
