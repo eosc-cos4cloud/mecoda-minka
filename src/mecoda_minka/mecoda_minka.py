@@ -1,4 +1,5 @@
 import importlib.resources as resources
+import math
 import os
 from contextlib import suppress
 from datetime import date
@@ -88,11 +89,16 @@ def get_obs(
     total_obs = session.get(url).json()["total_results"]
     print("Total observations to download:", total_obs)
     if total_obs <= 10000:
+
         observations = _request(url, num_max)
     else:
         observations = []
         # download obs using bins of 10000 ids
-        for n in range(1, 34):
+        today = date.today().strftime("%Y-%m-%d")
+        url_today = f"https://api.minka-sdg.org/v1/observations?created_on={today}&order=desc&order_by=created_at"
+        last_id = session.get(url_today).json()["results"][0]["id"]
+        limit = math.ceil(last_id / 10000)
+        for n in range(1, limit + 1):
             batch_url = f"{url}&id_above={(n-1)*10000}&id_below={(n*10000)+1}"
             print(batch_url)
             obs_batch = _request(batch_url, num_max)
