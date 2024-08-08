@@ -88,8 +88,7 @@ def get_obs(
     session = requests.Session()
     total_obs = session.get(url).json()["total_results"]
     print("Total observations to download:", total_obs)
-    if total_obs <= 10000:
-
+    if total_obs <= 10000 or num_max <= 10000:
         observations = _request(url, num_max)
     else:
         observations = []
