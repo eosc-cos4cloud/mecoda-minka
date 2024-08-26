@@ -318,7 +318,6 @@ def _request(arg_url: str, num_max: Optional[int] = None) -> List[Observation]:
     n = 1
     session = requests.Session()
     page = session.get(arg_url)
-
     if page.status_code == 404:
         raise ValueError("Not found")
 
@@ -330,7 +329,7 @@ def _request(arg_url: str, num_max: Optional[int] = None) -> List[Observation]:
             while len(response["results"]) == 200:
                 observations.extend(_build_observations(response["results"]))
                 n += 1
-                if n > 49:
+                if n > 50:
                     print("WARNING: Only the first 10,000 results are displayed")
                     break
                 if num_max is not None and len(observations) >= num_max:
