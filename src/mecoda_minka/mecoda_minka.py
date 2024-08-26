@@ -88,6 +88,7 @@ def get_obs(
     session = requests.Session()
     total_obs = session.get(url).json()["total_results"]
     print("Total observations to download:", total_obs)
+
     if total_obs <= 10000 or (num_max != None and num_max <= 10000):
         observations = _request(url, num_max)
     else:
@@ -97,8 +98,14 @@ def get_obs(
         url_today = f"https://api.minka-sdg.org/v1/observations?created_on={today}&order=desc&order_by=created_at"
         last_id = session.get(url_today).json()["results"][0]["id"]
         limit = math.ceil(last_id / 10000)
-        for n in range(1, limit + 1):
-            batch_url = f"{url}&id_above={(n-1)*10000}&id_below={(n*10000)+1}"
+
+        # sacamos first id
+        url_first = f"{url}&order_by=id&order=asc"
+        first_id = session.get(url_first).json()["results"][0]["id"]
+        start = math.floor(first_id / 10000)
+
+        for n in range(start, limit + 1):
+            batch_url = f"{url}&id_above={n*10000}&id_below={(n*10000)+1}"
             print(batch_url)
             obs_batch = _request(batch_url, num_max)
             if len(obs_batch) > 0:
