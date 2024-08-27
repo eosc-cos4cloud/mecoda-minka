@@ -59,6 +59,7 @@ def get_obs(
     grade: Optional[str] = None,  # Must be one of this: research, casual, needs_id
     id_above: Optional[int] = None,
     id_below: Optional[int] = None,
+    updated_since: Optional[str] = None,  # Must be updated on or after this date
 ) -> List[Observation]:
     """
     Function to extract the observations and that supports different filters
@@ -84,6 +85,7 @@ def get_obs(
         grade,
         id_above,
         id_below,
+        updated_since,
     )
     session = requests.Session()
     total_obs = session.get(url).json()["total_results"]
@@ -100,12 +102,17 @@ def get_obs(
         limit = math.ceil(last_id / 10000)
 
         # sacamos first id
-        url_first = f"{url}&order_by=id&order=asc"
-        first_id = session.get(url_first).json()["results"][0]["id"]
-        start = math.floor(first_id / 10000)
+        if id_above is None:
+            url_first = f"{url}&order_by=id&order=asc"
+            first_id = session.get(url_first).json()["results"][0]["id"]
+            start = math.floor(first_id / 10000)
+        else:
+            start = math.floor(id_above / 10000)
 
         for n in range(start, limit + 1):
-            batch_url = f"{url}&id_above={n*10000}&id_below={(n*10000)+1}"
+            # replace id_above if indicated, to avoid redundancy
+            url = url.replace(f"&id_above={id_above}", "")
+            batch_url = f"{url}&id_above={n*10000}&id_below={(n+1)*10000+1}"
             print(batch_url)
             obs_batch = _request(batch_url, num_max)
             if len(obs_batch) > 0:
@@ -129,7 +136,7 @@ def _build_url(
     place_id: Optional[int] = None,
     introduced: Optional[bool] = None,
     year: Optional[int] = None,
-    start_on: Optional[date] = None,
+    starts_on: Optional[date] = None,
     ends_on: Optional[date] = None,
     created_on: Optional[date] = None,  # day YYYY-MM-DD
     created_d1: Optional[date] = None,
@@ -137,6 +144,7 @@ def _build_url(
     grade: Optional[str] = None,
     id_above: Optional[int] = None,
     id_below: Optional[int] = None,
+    updated_since: Optional[date] = None,
 ) -> str:
     """
     Internal function to build the url to which the observation request
@@ -163,8 +171,8 @@ def _build_url(
         args.append(f"created_d1={created_d1}")
     if created_d2 is not None:
         args.append(f"created_d2={created_d2}")
-    if start_on is not None:
-        args.append(f"d1={start_on}")
+    if starts_on is not None:
+        args.append(f"d1={starts_on}")
     if ends_on is not None:
         args.append(f"d2={ends_on}")
     if query is not None:
@@ -189,6 +197,8 @@ def _build_url(
         args.append(f"id_above={id_above}")
     if id_below is not None:
         args.append(f"id_below={id_below}")
+    if updated_since is not None:
+        args.append(f"updated_since={updated_since}")
     url = f'{base_url}?{"&".join(args)}&per_page=200'
     # if no parameter indicated, it returns the last records
     print(url)
