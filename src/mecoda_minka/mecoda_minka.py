@@ -88,11 +88,18 @@ def get_obs(
         updated_since,
     )
     session = requests.Session()
-    total_obs = session.get(url).json()["total_results"]
-    print("Total observations to download:", total_obs)
+    try:
+        total_obs = session.get(url).json()["total_results"]
+        print("Total observations to download:", total_obs)
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Network error: {e}")
+    except KeyError as e:
+        raise Exception(f"Not valid parameters: {e}")
+    except ValueError as e:
+        raise Exception(f"Invalid JSON response: {e}")
 
     if total_obs <= 10000 or (num_max != None and num_max <= 10000):
-        observations = _request(url, num_max)
+        observations = _request(url, num_max, session)
     else:
         observations = []
         # download obs using bins of 10000 ids
@@ -114,7 +121,7 @@ def get_obs(
             url = url.replace(f"&id_above={id_above}", "")
             batch_url = f"{url}&id_above={n*10000}&id_below={(n+1)*10000+1}"
             print(batch_url)
-            obs_batch = _request(batch_url, num_max)
+            obs_batch = _request(batch_url, num_max, session)
             if len(obs_batch) > 0:
                 observations.extend(obs_batch)
                 # stop when num_max is exceeded
@@ -326,14 +333,17 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
     return observations
 
 
-def _request(arg_url: str, num_max: Optional[int] = None) -> List[Observation]:
+def _request(
+    arg_url: str, num_max: Optional[int] = None, session=None
+) -> List[Observation]:
     """
     Internal function that performs the API request and returns
     the list of Observation objects.
     """
     observations = []
     n = 1
-    session = requests.Session()
+    if session is None:
+        session = requests.Session()
     page = session.get(arg_url)
     if page.status_code == 404:
         raise ValueError("Not found")
@@ -562,9 +572,11 @@ def download_photos(
     if not os.path.exists(directorio):
         os.makedirs(directorio)
 
+    session = requests.Session()
+
     # Iterate through the df_photos query result and download the photos in medium size
     for i, row in df_photos.iterrows():
-        response = requests.get(row["photos_medium_url"], stream=True)
+        response = session.get(row["photos_medium_url"], stream=True)
         if response.status_code == 200:
             with open(f"{directorio}/{row['path']}", "wb") as out_file:
                 out_file.write(response.content)
