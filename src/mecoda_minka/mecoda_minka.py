@@ -103,9 +103,10 @@ def get_obs(
     else:
         observations = []
         # download obs using bins of 10000 ids
-        today = date.today().strftime("%Y-%m-%d")
-        url_today = f"https://api.minka-sdg.org/v1/observations?created_on={today}&order=desc&order_by=created_at"
-        last_id = session.get(url_today).json()["results"][0]["id"]
+        url_today_last_ob = (
+            f"https://api.minka-sdg.org/v1/observations?order=desc&order_by=created_at"
+        )
+        last_id = session.get(url_today_last_ob).json()["results"][0]["id"]
         limit = math.ceil(last_id / 10000)
 
         # sacamos first id
