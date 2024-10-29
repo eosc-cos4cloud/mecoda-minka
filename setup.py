@@ -10,7 +10,7 @@ with open("README.md", "r") as readme_file:
 
 setup(
     name="mecoda-minka",
-    version="1.7.12",
+    version="1.7.13",
     description="Library to download information using Minka API.",
     author="Ana Alvarez",
     author_email="ana.alvarez@icm.csic.es",
@@ -20,6 +20,7 @@ setup(
     url="https://github.com/pynomaly/mecoda-minka",
     packages=find_packages("src"),
     package_dir={"": "src"},
+    include_package_data=True,
     package_data={"mecoda_minka": ["py.typed", "data/*.csv"]},
     py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
     python_requires=">=3.6",

@@ -504,9 +504,9 @@ def _get_dict_taxon(ancestry_string, df_taxon):
         for ancestry in list_ancestries:
             if int(ancestry) != 1:
                 try:
-                    taxon_row = df_taxon[df_taxon["id"] == int(ancestry)]
+                    taxon_row = df_taxon[df_taxon["taxon_id"] == int(ancestry)]
                     rank = taxon_row["rank"].item()
-                    name = taxon_row["name"].item()
+                    name = taxon_row["taxon_name"].item()
                     data[rank] = name
                 except:
                     # para rangos intermedios, no los incluye
