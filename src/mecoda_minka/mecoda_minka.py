@@ -19,6 +19,16 @@ BASE_URL = "https://minka-sdg.org"
 API_PATH = "https://api.minka-sdg.org/v1"
 
 
+try:
+    df_taxon = pd.read_csv(
+        "https://raw.githubusercontent.com/eosc-cos4cloud/mecoda-minka/refs/heads/master/src/mecoda_minka/data/taxon_tree.csv"
+    )
+
+except:
+    file_path = resources.files("mecoda_minka.data") / "taxon_tree.csv"
+    df_taxon = pd.read_csv(file_path)
+
+
 def get_project(project: Union[str, int]) -> List[Project]:
     """Download information of a project from id or name"""
 
@@ -381,7 +391,7 @@ def _request(
     return observations
 
 
-def get_dfs(observations) -> pd.DataFrame:
+def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
     """
     Function to extract dataframe from observations and dataframe from photos.
     """
@@ -434,7 +444,7 @@ def get_dfs(observations) -> pd.DataFrame:
     df_observations.loc[df_observations.license_obs.isnull(), "license_obs"] = "C"
 
     # Extraemos las columnas taxonómicas
-    _get_taxon_columns(df_observations)
+    _get_taxon_columns(df_observations, df_taxon)
 
     # Construimos el df de fotos
     df_photos = df[
@@ -484,9 +494,7 @@ def get_dfs(observations) -> pd.DataFrame:
     return df_observations, df_photos
 
 
-def _get_taxon_columns(df_obs: pd.DataFrame):
-    file_path = resources.files("mecoda_minka.data") / "taxon_tree.csv"
-    df_taxon = pd.read_csv(file_path)
+def _get_taxon_columns(df_obs: pd.DataFrame, df_taxon: pd.DataFrame):
     df_obs["taxon_ancestry"] = df_obs["taxon_ancestry"].apply(
         lambda x: _get_dict_taxon(x, df_taxon)
     )
