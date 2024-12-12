@@ -70,6 +70,7 @@ def get_obs(
     id_above: Optional[int] = None,
     id_below: Optional[int] = None,
     updated_since: Optional[str] = None,  # Must be updated on or after this date
+    api_token: Optional[str] = None,
 ) -> List[Observation]:
     """
     Function to extract the observations and that supports different filters
@@ -98,8 +99,12 @@ def get_obs(
         updated_since,
     )
     session = requests.Session()
+    if api_token == None:
+        headers = None
+    else:
+        headers = {"Authorization": api_token}
     try:
-        total_obs = session.get(url).json()["total_results"]
+        total_obs = session.get(url, headers=headers).json()["total_results"]
         print("Total observations to download:", total_obs)
     except requests.exceptions.RequestException as e:
         raise Exception(f"Network error: {e}")
@@ -109,20 +114,24 @@ def get_obs(
         raise Exception(f"Invalid JSON response: {e}")
 
     if total_obs <= 10000 or (num_max != None and num_max <= 10000):
-        observations = _request(url, num_max, session)
+        observations = _request(url, num_max, session, api_token)
     else:
         observations = []
         # download obs using bins of 10000 ids
         url_today_last_ob = (
             f"https://api.minka-sdg.org/v1/observations?order=desc&order_by=created_at"
         )
-        last_id = session.get(url_today_last_ob).json()["results"][0]["id"]
+        last_id = session.get(url_today_last_ob, headers=headers).json()["results"][0][
+            "id"
+        ]
         limit = math.ceil(last_id / 10000)
 
         # sacamos first id
         if id_above is None:
             url_first = f"{url}&order_by=id&order=asc"
-            first_id = session.get(url_first).json()["results"][0]["id"]
+            first_id = session.get(url_first, headers=headers).json()["results"][0][
+                "id"
+            ]
             start = math.floor(first_id / 10000)
         else:
             start = math.floor(id_above / 10000)
@@ -132,7 +141,7 @@ def get_obs(
             url = url.replace(f"&id_above={id_above}", "")
             batch_url = f"{url}&id_above={n*10000}&id_below={(n+1)*10000+1}"
             print(batch_url)
-            obs_batch = _request(batch_url, num_max, session)
+            obs_batch = _request(batch_url, num_max, session, api_token)
             if len(obs_batch) > 0:
                 observations.extend(obs_batch)
                 # stop when num_max is exceeded
@@ -257,6 +266,16 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
                 data["longitude"] = None
 
         with suppress(KeyError):
+            if data["obscured"] == True:
+                try:
+                    location = data["private_location"].split(",")
+                    data["latitude"] = location[0]
+                    data["longitude"] = location[1]
+                except:
+                    data["latitude"] = None
+                    data["longitude"] = None
+
+        with suppress(KeyError):
             lista_fotos = []
             # Caso para las observaciones filtradas por id
             if len(observations_data) == 1:
@@ -345,7 +364,7 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
 
 
 def _request(
-    arg_url: str, num_max: Optional[int] = None, session=None
+    arg_url: str, num_max: Optional[int] = None, session=None, api_token=None
 ) -> List[Observation]:
     """
     Internal function that performs the API request and returns
@@ -353,9 +372,16 @@ def _request(
     """
     observations = []
     n = 1
+
     if session is None:
         session = requests.Session()
-    page = session.get(arg_url)
+
+    if api_token:
+        headers = {"Authorization": api_token}
+    else:
+        headers = None
+    page = session.get(arg_url, headers=headers)
+
     if page.status_code == 404:
         raise ValueError("Not found")
 
@@ -373,7 +399,7 @@ def _request(
                 if num_max is not None and len(observations) >= num_max:
                     break
                 url = f"{arg_url}&page={n}"
-                page = session.get(url)
+                page = session.get(url, headers=headers)
                 response = page.json()
                 if "results" not in response:
                     raise ValueError("Invalid response format: missing 'results' field")
