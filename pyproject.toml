@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "mecoda-minka"
+version = "1.8.2"
+description = "Library to download information using Minka API."
+authors = ["Ana Alvarez <ana.alvarez@icm.csic.es>"]
+license = "GPL-3.0-or-later"
+readme = "README.md"
+repository = "https://github.com/pynomaly/mecoda-minka"
+packages = [
+    { include = "mecoda_minka", from = "src" },
+]
+include = [
+    "src/mecoda_minka/py.typed",
+    "src/mecoda_minka/data/*.csv"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: Unix",
+    "Operating System :: POSIX",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Utilities",
+    "Natural Language :: English"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+pydantic = "*"
+requests = "*"
+pandas = "*"
+folium = "*"
+
+[tool.poetry.group.dev.dependencies]
+requests-mock = "*"
+pytest = "*"
+pytest-coverage = "*"
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"

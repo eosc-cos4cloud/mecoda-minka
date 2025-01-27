@@ -10,3 +10,5 @@ dist/
 tests/__init__.pyc
 .vscode/
 .envs
+.pytest_cache
+poetry.lock
