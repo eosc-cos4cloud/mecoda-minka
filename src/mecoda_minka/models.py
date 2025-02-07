@@ -108,3 +108,4 @@ class Observation(BaseModel):
     identifiers: Optional[str] = None
     num_identification_agreements: Optional[int] = None
     num_identification_disagreements: Optional[int] = None
+    device: Optional[str] = None

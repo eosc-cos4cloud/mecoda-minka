@@ -14,6 +14,8 @@ from .models import ICONIC_TAXON, TAXONS, Observation, Photo, Project
 
 urllib3.disable_warnings()
 
+print()
+
 # Variables
 BASE_URL = "https://minka-sdg.org"
 API_PATH = "https://api.minka-sdg.org/v1"
@@ -241,6 +243,11 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
 
     for data in observations_data:
         with suppress(KeyError):
+            if data["oauth_application_id"] == 2:
+                data["device"] = "app"
+            else:
+                data["device"] = "web"
+        with suppress(KeyError):
             if data["place_guess"] is not None:
                 data["place_name"] = data["place_guess"].replace("\r\n", " ").strip()
 
@@ -463,6 +470,7 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
             "num_identification_agreements",
             "num_identification_disagreements",
             "taxon_ancestry",
+            "device",
         ]
     ]
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mecoda-minka"
-version = "1.8.2"
+version = "1.8.3"
 description = "Library to download information using Minka API."
 authors = ["Ana Alvarez <ana.alvarez@icm.csic.es>"]
 license = "GPL-3.0-or-later"

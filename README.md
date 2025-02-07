@@ -118,7 +118,7 @@ The object `Observation` contains the information of each of the observations re
 | `order` | `Optional[str]` | Order to which the observation belongs  | `None` |
 | `family` | `Optional[str]` | Family to which the observation belongs  | `None` |
 | `genus` | `Optional[str]` | Genus to which the observation belongs  | `None` |
-
+| `device` | `Optional[str]` | Device used to upload observation to MINKA: web / app | `None` |
 
 ## Project
 
