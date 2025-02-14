@@ -474,6 +474,8 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
         ]
     ]
 
+    df_observations.sort_values(by="id", ascending=False, inplace=True)
+
     # Las observaciones con licencia None son Copyright
     df_observations.loc[df_observations.license_obs.isnull(), "license_obs"] = "C"
 
@@ -524,6 +526,8 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
         "C",
         df_photos["license_photo"],
     )
+
+    df_photos.sort_values(by="id", ascending=False, inplace=True)
 
     return df_observations, df_photos
 
