@@ -59,8 +59,6 @@ We can create two dataframes from it using `get_dfs`, one for observations and o
 df_obs, df_photos = get_dfs(observations)
 ```
 
-
-
 ## Get projects
 
 With `get_project` you can get the information of the projects collected in the API. The function supports a single argument, which can be the project identification number or the name of the project. In case the name does not correspond exclusively to a project, it returns the information from the list of projects that include that word. 
