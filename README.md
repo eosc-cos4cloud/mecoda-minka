@@ -46,12 +46,19 @@ For the `taxon` argument the possible values are:
 Example of use:
 
 ```python
-from mecoda_minka import get_obs
+from mecoda_minka import get_obs, get_dfs
 
-observations = get_obs(year=2018, taxon='fungi')
+observations = get_obs(id_project=264, grade="research")
 
 ```
 `observations` is an object list [`Observation`](#observation).
+
+We can create two dataframes from it using `get_dfs`, one for observations and one for photos. `df_obs` adds taxonomic columns to each observation and other supplementary information. `df_photos` contains the URL of each photo associated with an observation, as well as the attribution that should be added when used.
+
+```python
+df_obs, df_photos = get_dfs(observations)
+```
+
 
 
 ## Get projects
