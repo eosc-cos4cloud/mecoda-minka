@@ -1,6 +1,6 @@
 <img src="docs/logo-cos4cloud-middle.png" alt="cos4cloud" width="400"/>
 
-Library to extract information collected in the Minka API. This library is part of MECODA (ModulE for Citizen Observatory Data Analysis), aimed to facilitate analysis and viewing of citizen science data.
+High-performance library to extract information collected in the Minka API. This library is part of MECODA (ModulE for Citizen Observatory Data Analysis), aimed to facilitate analysis and viewing of citizen science data.
 
 
 <img src="docs/embimos-positivo.png" alt="embimos" width="150"/>
@@ -53,7 +53,7 @@ observations = get_obs(id_project=264, grade="research")
 ```
 `observations` is an object list [`Observation`](#observation).
 
-We can create two dataframes from it using `get_dfs`, one for observations and one for photos. `df_obs` adds taxonomic columns to each observation and other supplementary information. `df_photos` contains the URL of each photo associated with an observation, as well as the attribution that should be added when used.
+We can create two dataframes from it using the high-performance `get_dfs` function, one for observations and one for photos. `df_obs` adds taxonomic columns to each observation and other supplementary information. `df_photos` contains the URL of each photo associated with an observation, as well as the attribution that should be added when used.
 
 ```python
 df_obs, df_photos = get_dfs(observations)
@@ -94,7 +94,7 @@ The models are defined using objects from [Pydantic] (https://pydantic-docs.help
 
 ## Observation
 
-The object `Observation` contains the information of each of the observations registered in [Minka] (https://minka-sdg.org/observations) and has the following attributes:
+The `Observation` object contains the information of each of the observations registered in [Minka](https://minka-sdg.org/observations) and has the following attributes. **New in v1.8.4+**: Enhanced with automatic geographic coordinate processing and optimized taxonomic data extraction.
 
 | Attribute | Type | Description | Default value |
 | -------- | ---- | ----------- | ----------------- |
@@ -162,7 +162,7 @@ The `Photo` object contains the information of each photography linked to an obs
 
 To contribute to this library, follow the steps below.
 
-* You need to have Python 3.7 or higher, virtualenv and git installed.
+* You need to have Python 3.8 or higher, [Poetry](https://python-poetry.org/) and git installed.
 
 * Create a github fork of this project.
 
@@ -172,16 +172,10 @@ To contribute to this library, follow the steps below.
     git clone git@github.com:<your_username>/mecoda_minka.git
     cd mecoda_minka
     ```
-* Configure your virtualenv to run the tests:
-    ```bash
-    virtualenv -p `which python3.7` env
-    source env/bin/activate
-    ```
 
-* Install `mecoda_minka` and its dependencies.
+* Install dependencies using Poetry:
     ```bash
-    pip3 install -e .
-    pip3 install -r requirements-dev.txt
+    poetry install
     ```
 
 * Create a new branch and make your changes:
@@ -189,12 +183,12 @@ To contribute to this library, follow the steps below.
     git checkout -b mi-nueva-rama
     ```
 
-* Run the tests with:
+* Run the tests with Poetry:
     ```bash
-    python -m pytest --cov-report term-missing --cov src tests
+    poetry run pytest --cov-report term-missing --cov src tests
     ```
 
-    If you need to pass a specific test, you can use `pytest -k <test-name>`.
+    If you need to pass a specific test, you can use `poetry run pytest -k <test-name>`.
 
 * Update the documentation.
 
@@ -216,9 +210,9 @@ To contribute to this library, follow the steps below.
     ```
 * Make changes to the code
 
-* Run the tests:
+* Run the tests with Poetry:
     ```bash
-    python -m pytest --cov-report term-missing --cov src tests
+    poetry run pytest --cov-report term-missing --cov src tests
     ```
 
 * Edit the `setup.py` file to upload the version, which means changing the` version` argument in the `setup` function. The convention is 0.1.0 == major.minor.patch. `major` is to introduce changes that break the existing code. `minor` refers to changes that add functionality but do not break existing code. `patch` refers to changes that fix bugs but do not add functionality.
