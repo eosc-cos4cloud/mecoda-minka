@@ -1,6 +1,7 @@
 import importlib.resources as resources
 import math
 import os
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import suppress
 from datetime import date
@@ -23,6 +24,29 @@ print()
 # Variables
 BASE_URL = "https://minka-sdg.org"
 API_PATH = "https://api.minka-sdg.org/v1"
+
+
+# Global counter for tracking total observations downloaded
+class ObservationCounter:
+    def __init__(self):
+        self._count = 0
+        self._lock = threading.Lock()
+
+    def add(self, count: int):
+        with self._lock:
+            self._count += count
+            return self._count
+
+    def get(self):
+        with self._lock:
+            return self._count
+
+    def reset(self):
+        with self._lock:
+            self._count = 0
+
+
+_observation_counter = ObservationCounter()
 
 
 @lru_cache(maxsize=1)
@@ -111,6 +135,9 @@ def get_obs(
 
     print("Generating list of observations:")
 
+    # Reset counter at the beginning
+    _observation_counter.reset()
+
     url = _build_url(
         query,
         id_project,
@@ -148,6 +175,8 @@ def get_obs(
 
     if total_obs <= 10000 or (num_max != None and num_max <= 10000):
         observations = _request(url, num_max, session, api_token)
+        final_total = _observation_counter.add(len(observations))
+        print(f"Download completed: {final_total} observations total")
     else:
         # Optimized parallel processing for large datasets (>10000)
         print("Large dataset detected, using optimized parallel processing...")
@@ -199,8 +228,15 @@ def get_obs(
         def fetch_batch(batch_info):
             batch_num, batch_url = batch_info
             try:
-                print(f"Processing batch {batch_num}: {batch_url}")
-                return _request(batch_url, None, session, api_token)
+                batch_observations = _request(
+                    batch_url, None, session, api_token, suppress_prints=True
+                )
+                if batch_observations:
+                    current_total = _observation_counter.add(len(batch_observations))
+                    print(
+                        f"Batch completed: +{len(batch_observations)} obs (Total: {current_total}/{total_obs})"
+                    )
+                return batch_observations
             except Exception as e:
                 print(f"Error processing batch {batch_num}: {e}")
                 return []
@@ -225,6 +261,8 @@ def get_obs(
         # Apply final limit
         if num_max and len(observations) > num_max:
             observations = observations[:num_max]
+
+        print(f"Download completed: {len(observations)} observations total")
 
     return observations
 
@@ -452,7 +490,11 @@ def _build_observations(observations_data: List[Dict[str, Any]]) -> List[Observa
 
 
 def _request(
-    arg_url: str, num_max: Optional[int] = None, session=None, api_token=None
+    arg_url: str,
+    num_max: Optional[int] = None,
+    session=None,
+    api_token=None,
+    suppress_prints: bool = False,
 ) -> List[Observation]:
     """
     Optimized function that performs parallel API requests and returns
@@ -481,7 +523,7 @@ def _request(
 
         first_page_results = response["results"]
         total_results = response.get("total_results", len(first_page_results))
-        
+
         # Calculate pages needed based on total results or num_max limit
         if num_max:
             total_pages_needed = min(50, math.ceil(num_max / 200))
@@ -493,7 +535,8 @@ def _request(
             observations = _build_observations(first_page_results)
             if num_max:
                 observations = observations[:num_max]
-            print(f"Number of elements: {len(observations)}")
+            if not suppress_prints:
+                print(f"Number of elements: {len(observations)}")
             return observations
 
         # Sequential processing for paginated requests to avoid test issues
@@ -508,11 +551,11 @@ def _request(
                     if "results" in data and data["results"]:
                         page_results = data["results"]
                         all_results.append(page_results)
-                        
+
                         # Stop if this page has fewer results than page size (indicates last page)
                         if len(page_results) < 200:
                             break
-                            
+
                         # Stop if we have enough results
                         total_so_far = sum(len(r) for r in all_results)
                         if num_max and total_so_far >= num_max:
@@ -551,7 +594,8 @@ def _request(
         if num_max and len(observations) > num_max:
             observations = observations[:num_max]
 
-        print(f"Number of elements: {len(observations)}")
+        if not suppress_prints:
+            print(f"Number of elements: {len(observations)}")
         return observations
 
     except ValueError as e:
@@ -567,21 +611,54 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
     if not observations:
         # Return empty DataFrames with the expected structure
         empty_obs_columns = [
-            "id", "created_at", "updated_at", "observed_on", "observed_on_time",
-            "iconic_taxon", "taxon_id", "taxon_rank", "taxon_name", "latitude", 
-            "longitude", "obscured", "place_name", "quality_grade", "user_id", 
-            "user_login", "license_obs", "identifications_count", "identifiers",
-            "num_identification_agreements", "num_identification_disagreements",
-            "taxon_ancestry", "device", "kingdom", "phylum", "class", "order", 
-            "family", "genus",
+            "id",
+            "created_at",
+            "updated_at",
+            "observed_on",
+            "observed_on_time",
+            "iconic_taxon",
+            "taxon_id",
+            "taxon_rank",
+            "taxon_name",
+            "latitude",
+            "longitude",
+            "obscured",
+            "place_name",
+            "quality_grade",
+            "user_id",
+            "user_login",
+            "license_obs",
+            "identifications_count",
+            "identifiers",
+            "num_identification_agreements",
+            "num_identification_disagreements",
+            "taxon_ancestry",
+            "device",
+            "kingdom",
+            "phylum",
+            "class",
+            "order",
+            "family",
+            "genus",
         ]
 
         empty_photos_columns = [
-            "id", "photos_id", "iconic_taxon", "taxon_name", "photos_medium_url",
-            "user_login", "latitude", "longitude", "license_photo", "attribution", "path",
+            "id",
+            "photos_id",
+            "iconic_taxon",
+            "taxon_name",
+            "photos_medium_url",
+            "user_login",
+            "latitude",
+            "longitude",
+            "license_photo",
+            "attribution",
+            "path",
         ]
 
-        return pd.DataFrame(columns=empty_obs_columns), pd.DataFrame(columns=empty_photos_columns)
+        return pd.DataFrame(columns=empty_obs_columns), pd.DataFrame(
+            columns=empty_photos_columns
+        )
 
     # Ultra-fast data extraction using vectorized operations
     def extract_obs_data_fast(obs):
@@ -592,7 +669,7 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
 
     # Always use the fastest approach - direct list comprehension
     data_list = [extract_obs_data_fast(obs) for obs in observations]
-    
+
     # Use pd.DataFrame constructor directly - faster than json_normalize for most cases
     df = pd.DataFrame(data_list)
 
@@ -612,19 +689,53 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
             if photos and isinstance(photos, list):
                 for photo in photos:
                     if photo:  # Skip None photos
-                        photos_data.append({
-                            "id": obs_id,
-                            "iconic_taxon": row.get("iconic_taxon"),
-                            "taxon_name": row.get("taxon_name"),
-                            "user_login": row.get("user_login"),
-                            "latitude": row.get("latitude"),
-                            "longitude": row.get("longitude"),
-                            "photos_id": getattr(photo, "id", None) if hasattr(photo, "id") else photo.get("id") if isinstance(photo, dict) else None,
-                            "photos_medium_url": getattr(photo, "medium_url", None) if hasattr(photo, "medium_url") else photo.get("medium_url") if isinstance(photo, dict) else None,
-                            "license_photo": getattr(photo, "license_photo", None) if hasattr(photo, "license_photo") else photo.get("license_photo") if isinstance(photo, dict) else None,
-                            "attribution": getattr(photo, "attribution", None) if hasattr(photo, "attribution") else photo.get("attribution") if isinstance(photo, dict) else None,
-                        })
-        
+                        photos_data.append(
+                            {
+                                "id": obs_id,
+                                "iconic_taxon": row.get("iconic_taxon"),
+                                "taxon_name": row.get("taxon_name"),
+                                "user_login": row.get("user_login"),
+                                "latitude": row.get("latitude"),
+                                "longitude": row.get("longitude"),
+                                "photos_id": (
+                                    getattr(photo, "id", None)
+                                    if hasattr(photo, "id")
+                                    else (
+                                        photo.get("id")
+                                        if isinstance(photo, dict)
+                                        else None
+                                    )
+                                ),
+                                "photos_medium_url": (
+                                    getattr(photo, "medium_url", None)
+                                    if hasattr(photo, "medium_url")
+                                    else (
+                                        photo.get("medium_url")
+                                        if isinstance(photo, dict)
+                                        else None
+                                    )
+                                ),
+                                "license_photo": (
+                                    getattr(photo, "license_photo", None)
+                                    if hasattr(photo, "license_photo")
+                                    else (
+                                        photo.get("license_photo")
+                                        if isinstance(photo, dict)
+                                        else None
+                                    )
+                                ),
+                                "attribution": (
+                                    getattr(photo, "attribution", None)
+                                    if hasattr(photo, "attribution")
+                                    else (
+                                        photo.get("attribution")
+                                        if isinstance(photo, dict)
+                                        else None
+                                    )
+                                ),
+                            }
+                        )
+
         # Remove photos column from observations DataFrame
         df_observations = df.drop(["photos"], axis=1)
     else:
@@ -636,28 +747,51 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
         for col in datetime_cols:
             if col in df_observations.columns:
                 # Fast datetime conversion without format specification
-                df_observations[col] = pd.to_datetime(df_observations[col], errors="coerce", utc=True)
-        
+                df_observations[col] = pd.to_datetime(
+                    df_observations[col], errors="coerce", utc=True
+                )
+
         # Extract date components efficiently
         for col in ["created_at", "updated_at", "observed_on"]:
             if col in df_observations.columns:
                 df_observations[col] = df_observations[col].dt.date
 
         if "time_observed_at" in df_observations.columns:
-            df_observations["observed_on_time"] = df_observations["time_observed_at"].dt.time
+            df_observations["observed_on_time"] = df_observations[
+                "time_observed_at"
+            ].dt.time
             df_observations.drop(columns=["time_observed_at"], inplace=True)
 
     # Fast column selection
     desired_columns = [
-        "id", "created_at", "updated_at", "observed_on", "observed_on_time",
-        "iconic_taxon", "taxon_id", "taxon_rank", "taxon_name", "latitude", 
-        "longitude", "obscured", "place_name", "quality_grade", "user_id", 
-        "user_login", "license_obs", "identifications_count", "identifiers",
-        "num_identification_agreements", "num_identification_disagreements",
-        "taxon_ancestry", "device",
+        "id",
+        "created_at",
+        "updated_at",
+        "observed_on",
+        "observed_on_time",
+        "iconic_taxon",
+        "taxon_id",
+        "taxon_rank",
+        "taxon_name",
+        "latitude",
+        "longitude",
+        "obscured",
+        "place_name",
+        "quality_grade",
+        "user_id",
+        "user_login",
+        "license_obs",
+        "identifications_count",
+        "identifiers",
+        "num_identification_agreements",
+        "num_identification_disagreements",
+        "taxon_ancestry",
+        "device",
     ]
 
-    existing_columns = [col for col in desired_columns if col in df_observations.columns]
+    existing_columns = [
+        col for col in desired_columns if col in df_observations.columns
+    ]
     if existing_columns:
         df_observations = df_observations[existing_columns]
 
@@ -676,23 +810,24 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
     # Create photos DataFrame from extracted data
     if photos_data:
         df_photos = pd.DataFrame(photos_data)
-        
+
         # Fast photo ID processing
         df_photos["photos_id"] = df_photos["photos_id"].fillna("").astype(str)
-        
+
         # Vectorized path generation
         mask = df_photos["photos_id"] != ""
         df_photos.loc[mask, "path"] = (
-            df_photos.loc[mask, "id"].astype(str) + "_" + 
-            df_photos.loc[mask, "photos_id"] + ".jpg"
+            df_photos.loc[mask, "id"].astype(str)
+            + "_"
+            + df_photos.loc[mask, "photos_id"]
+            + ".jpg"
         )
         df_photos.loc[~mask, "path"] = None
 
         # Fast license processing
-        copyright_mask = (
-            df_photos["license_photo"].isna() & 
-            df_photos["attribution"].str.contains("all rights reserved", na=False)
-        )
+        copyright_mask = df_photos["license_photo"].isna() & df_photos[
+            "attribution"
+        ].str.contains("all rights reserved", na=False)
         df_photos.loc[copyright_mask, "license_photo"] = "C"
 
         # Fast sorting
@@ -700,13 +835,23 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
             df_photos.sort_values(by="id", ascending=False, inplace=True)
     else:
         # Empty photos DataFrame with correct structure
-        df_photos = pd.DataFrame(columns=[
-            "id", "photos_id", "iconic_taxon", "taxon_name", "photos_medium_url",
-            "user_login", "latitude", "longitude", "license_photo", "attribution", "path"
-        ])
+        df_photos = pd.DataFrame(
+            columns=[
+                "id",
+                "photos_id",
+                "iconic_taxon",
+                "taxon_name",
+                "photos_medium_url",
+                "user_login",
+                "latitude",
+                "longitude",
+                "license_photo",
+                "attribution",
+                "path",
+            ]
+        )
 
     return df_observations, df_photos
-
 
 
 def _get_taxon_columns(df_obs: pd.DataFrame, df_taxon: pd.DataFrame):
@@ -720,11 +865,13 @@ def _get_taxon_columns(df_obs: pd.DataFrame, df_taxon: pd.DataFrame):
         df_obs[level] = None
 
     # Create a lookup dictionary for faster access
-    if not hasattr(_get_taxon_columns, '_taxon_lookup'):
+    if not hasattr(_get_taxon_columns, "_taxon_lookup"):
         # Drop duplicates before creating the index
-        df_taxon_unique = df_taxon.drop_duplicates('taxon_id')
-        _get_taxon_columns._taxon_lookup = df_taxon_unique.set_index('taxon_id').to_dict('index')
-    
+        df_taxon_unique = df_taxon.drop_duplicates("taxon_id")
+        _get_taxon_columns._taxon_lookup = df_taxon_unique.set_index(
+            "taxon_id"
+        ).to_dict("index")
+
     taxon_lookup = _get_taxon_columns._taxon_lookup
 
     # Process all ancestries in batch
@@ -732,7 +879,7 @@ def _get_taxon_columns(df_obs: pd.DataFrame, df_taxon: pd.DataFrame):
         """Vectorized version of taxon extraction"""
         if not ancestry_string or pd.isna(ancestry_string):
             return {level: None for level in taxonomic_levels}
-        
+
         result = {level: None for level in taxonomic_levels}
         try:
             # Split and process all at once
@@ -742,8 +889,8 @@ def _get_taxon_columns(df_obs: pd.DataFrame, df_taxon: pd.DataFrame):
                     ancestry_id = int(ancestry)
                     if ancestry_id != 1 and ancestry_id in taxon_lookup:
                         taxon_info = taxon_lookup[ancestry_id]
-                        rank = taxon_info.get('rank')
-                        name = taxon_info.get('taxon_name')
+                        rank = taxon_info.get("rank")
+                        name = taxon_info.get("taxon_name")
                         if rank in result:
                             result[rank] = name
                 except (ValueError, KeyError):
@@ -754,7 +901,7 @@ def _get_taxon_columns(df_obs: pd.DataFrame, df_taxon: pd.DataFrame):
 
     # Apply vectorized function
     taxon_data = df_obs["taxon_ancestry"].apply(extract_taxon_info_vectorized)
-    
+
     # Extract each level efficiently
     for level in taxonomic_levels:
         df_obs[level] = taxon_data.apply(lambda x: x.get(level) if x else None)

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mecoda-minka"
-version = "1.9.0"
+version = "1.9.1"
 description = "High-performance library to download information using Minka API with optimized DataFrame processing."
 authors = ["Ana Alvarez <ana.alvarez@icm.csic.es>"]
 license = "GPL-3.0-or-later"
