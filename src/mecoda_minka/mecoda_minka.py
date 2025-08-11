@@ -175,8 +175,6 @@ def get_obs(
 
     if total_obs <= 10000 or (num_max != None and num_max <= 10000):
         observations = _request(url, num_max, session, api_token)
-        final_total = _observation_counter.add(len(observations))
-        print(f"Download completed: {final_total} observations total")
     else:
         # Optimized parallel processing for large datasets (>10000)
         print("Large dataset detected, using optimized parallel processing...")
@@ -551,6 +549,11 @@ def _request(
                     if "results" in data and data["results"]:
                         page_results = data["results"]
                         all_results.append(page_results)
+                        
+                        # Show progress for non-suppressed requests
+                        if not suppress_prints:
+                            total_so_far = sum(len(r) for r in all_results)
+                            print(f"Number of elements: {total_so_far}")
 
                         # Stop if this page has fewer results than page size (indicates last page)
                         if len(page_results) < 200:
@@ -594,8 +597,6 @@ def _request(
         if num_max and len(observations) > num_max:
             observations = observations[:num_max]
 
-        if not suppress_prints:
-            print(f"Number of elements: {len(observations)}")
         return observations
 
     except ValueError as e:
