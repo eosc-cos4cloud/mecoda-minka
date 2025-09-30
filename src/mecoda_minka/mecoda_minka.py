@@ -549,7 +549,7 @@ def _request(
                     if "results" in data and data["results"]:
                         page_results = data["results"]
                         all_results.append(page_results)
-                        
+
                         # Show progress for non-suppressed requests
                         if not suppress_prints:
                             total_so_far = sum(len(r) for r in all_results)
@@ -758,9 +758,22 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
                 df_observations[col] = df_observations[col].dt.date
 
         if "time_observed_at" in df_observations.columns:
+            # Convert to datetime UTC and then to Madrid hour
+            df_observations["time_observed_at"] = pd.to_datetime(df_observations["time_observed_at"])
+            
+            # Check if already tz-aware, if not localize to UTC first
+            if df_observations["time_observed_at"].dt.tz is None:
+                df_observations["time_observed_at"] = df_observations["time_observed_at"].dt.tz_localize("UTC")
+            
+            # Convert to Madrid timezone
+            df_observations["time_observed_at"] = df_observations["time_observed_at"].dt.tz_convert("Europe/Madrid")
+
+            # Extract only hour
             df_observations["observed_on_time"] = df_observations[
                 "time_observed_at"
             ].dt.time
+
+            # Eliminar la columna original
             df_observations.drop(columns=["time_observed_at"], inplace=True)
 
     # Fast column selection
