@@ -216,9 +216,7 @@ def get_obs(
         batch_urls = []
         base_url_clean = url.replace(f"&id_above={id_above}", "") if id_above else url
 
-        for n in range(
-            start, min(limit + 1, start + 20)
-        ):  # Limit to 20 batches for safety
+        for n in range(start, limit + 1):
             batch_url = f"{base_url_clean}&id_above={n*10000}&id_below={(n+1)*10000+1}"
             batch_urls.append((n, batch_url))
 
