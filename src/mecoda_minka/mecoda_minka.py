@@ -173,7 +173,7 @@ def get_obs(
     except ValueError as e:
         raise Exception(f"Invalid JSON response: {e}")
 
-    if total_obs <= 10000 or (num_max != None and num_max <= 10000):
+    if total_obs <= 1000 or (num_max != None and num_max <= 1000):
         observations = _request(url, num_max, session, api_token)
     else:
         # Optimized parallel processing for large datasets (>10000)
@@ -757,14 +757,20 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
 
         if "time_observed_at" in df_observations.columns:
             # Convert to datetime UTC and then to Madrid hour
-            df_observations["time_observed_at"] = pd.to_datetime(df_observations["time_observed_at"])
-            
+            df_observations["time_observed_at"] = pd.to_datetime(
+                df_observations["time_observed_at"]
+            )
+
             # Check if already tz-aware, if not localize to UTC first
             if df_observations["time_observed_at"].dt.tz is None:
-                df_observations["time_observed_at"] = df_observations["time_observed_at"].dt.tz_localize("UTC")
-            
+                df_observations["time_observed_at"] = df_observations[
+                    "time_observed_at"
+                ].dt.tz_localize("UTC")
+
             # Convert to Madrid timezone
-            df_observations["time_observed_at"] = df_observations["time_observed_at"].dt.tz_convert("Europe/Madrid")
+            df_observations["time_observed_at"] = df_observations[
+                "time_observed_at"
+            ].dt.tz_convert("Europe/Madrid")
 
             # Extract only hour
             df_observations["observed_on_time"] = df_observations[
