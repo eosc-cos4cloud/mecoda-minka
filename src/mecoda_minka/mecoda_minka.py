@@ -602,7 +602,7 @@ def _request(
         return []
 
 
-def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
+def get_dfs(observations, lang=None, df_taxon=df_taxon) -> pd.DataFrame:
     """
     Highly optimized function to extract dataframe from observations and dataframe from photos.
     """
@@ -777,7 +777,7 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
                 "time_observed_at"
             ].dt.time
 
-            # Eliminar la columna original
+            # Eliminar la columna original e index
             df_observations.drop(columns=["time_observed_at"], inplace=True)
 
     # Fast column selection
@@ -832,15 +832,28 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
         # Fast photo ID processing
         df_photos["photos_id"] = df_photos["photos_id"].fillna("").astype(str)
 
+        # Extraer extensión de la URL de forma vectorizada
+        df_photos["extension"] = df_photos["photos_medium_url"].str.split(".").str[-1]
+        df_photos["extension"] = "." + df_photos["extension"]
+
         # Vectorized path generation
-        mask = df_photos["photos_id"] != ""
+        # Solo crear path si tiene photos_id Y extensión válida
+        mask = (
+            (df_photos["photos_id"] != "")
+            & (df_photos["extension"].notna())
+            & (df_photos["extension"] != ".")
+        )
+
         df_photos.loc[mask, "path"] = (
             df_photos.loc[mask, "id"].astype(str)
             + "_"
             + df_photos.loc[mask, "photos_id"]
-            + ".jpg"
+            + df_photos.loc[mask, "extension"]
         )
         df_photos.loc[~mask, "path"] = None
+
+        # Limpiar columna temporal
+        df_photos = df_photos.drop(columns=["extension"])
 
         # Fast license processing
         copyright_mask = df_photos["license_photo"].isna() & df_photos[
@@ -869,7 +882,42 @@ def get_dfs(observations, df_taxon=df_taxon) -> pd.DataFrame:
             ]
         )
 
+    # Get common names
+    if lang != None:
+        common_names = {}
+        unique_taxons = df_observations["taxon_id"].unique()
+        batch_size = 30
+
+        for i in range(0, len(unique_taxons), batch_size):
+            batch = unique_taxons[i : i + batch_size]
+            common_names_dict = _get_common_name_from_taxon(batch, lang=lang)
+            common_names.update(common_names_dict)
+
+        # Mapear los nombres comunes
+        df_observations["common_name"] = (
+            df_observations["taxon_id"].astype(int).map(common_names)
+        )
+
     return df_observations, df_photos
+
+
+def _get_common_name_from_taxon(taxon_ids, lang=None, session=None):
+    common_names_dict = {}
+    taxon_string = "%2C".join(taxon_ids)
+    url_taxon = (
+        f"https://api.minka-sdg.org/v1/taxa?taxon_id={taxon_string}&locale={lang}"
+    )
+    if session is None:
+        session = _create_optimized_session()
+    results = session.get(url_taxon).json()["results"]
+    for result in results:
+        taxon_id = result["id"]
+        try:
+            common_name = result["preferred_common_name"]
+            common_names_dict[taxon_id] = common_name
+        except:
+            common_names_dict[taxon_id] = None
+    return common_names_dict
 
 
 def _get_taxon_columns(df_obs: pd.DataFrame, df_taxon: pd.DataFrame):
