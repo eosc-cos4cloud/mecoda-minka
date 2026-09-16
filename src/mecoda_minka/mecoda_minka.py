@@ -116,6 +116,7 @@ def get_obs(
     taxon_id: Optional[int] = None,
     place_id: Optional[int] = None,
     introduced: Optional[bool] = None,
+    verifiable: Optional[bool] = None,
     year: Optional[int] = None,
     num_max: Optional[int] = None,
     starts_on: Optional[str] = None,  # Must be observed on or after this date
@@ -147,6 +148,7 @@ def get_obs(
         taxon_id,
         place_id,
         introduced,
+        verifiable,
         year,
         starts_on,
         ends_on,
@@ -191,9 +193,9 @@ def get_obs(
                 print(f"Error fetching boundary ID: {e}")
             return None
 
-        # Fetch first and last IDs in parallel
+        # Fetch first and last IDs in parallel (using filtered dataset, not global)
         with ThreadPoolExecutor(max_workers=2) as executor:
-            url_last = f"https://api.minka-sdg.org/v1/observations?order=desc&order_by=created_at"
+            url_last = f"{url}&order_by=id&order=desc"
             url_first = f"{url}&order_by=id&order=asc" if id_above is None else None
 
             future_last = executor.submit(fetch_boundary_id, url_last, False)
@@ -272,6 +274,7 @@ def _build_url(
     taxon_id: Optional[int] = None,
     place_id: Optional[int] = None,
     introduced: Optional[bool] = None,
+    verifiable: Optional[bool] = None,
     year: Optional[int] = None,
     starts_on: Optional[date] = None,
     ends_on: Optional[date] = None,
@@ -300,6 +303,8 @@ def _build_url(
             args.append(f"introduced=true&project_id={id_project}")
         else:
             args.append(f"project_id={id_project}")
+    if verifiable is True:
+        args.append(f"verifiable=true")
     if user is not None:
         args.append(f"user_login={user}")
     if created_on is not None:
